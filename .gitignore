@@ -1,0 +1,34 @@
+# ── Secrets ─────────────────────────────────────────────────────────────
+# Real keys live only in these files. Never commit them: backend/.env holds
+# the Supabase service_role key, which bypasses Row Level Security.
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# ── Node / Next.js ──────────────────────────────────────────────────────
+node_modules/
+.next/
+out/
+build/
+next-env.d.ts
+*.tsbuildinfo
+
+# ── Python ──────────────────────────────────────────────────────────────
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# ── Logs & OS / editor noise ────────────────────────────────────────────
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ── Local tool state ────────────────────────────────────────────────────
+.claude/

@@ -1,0 +1,105 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+  /* Display face for hero + major section titles (`font-serif`). */
+  --font-serif: 'Instrument Serif', Georgia, serif;
+}
+
+html, body {
+  background-color: #050405;
+  font-family: 'DM Sans', sans-serif;
+}
+
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.20; transform: scale(1); }
+  50% { opacity: 0%; transform: scale(1.15); }
+}
+
+@keyframes status-tick {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-up-sm {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes badge-spring {
+  0%   { transform: scale(0.6); }
+  60%  { transform: scale(1.1); }
+  100% { transform: scale(1.0); }
+}
+
+@keyframes verdict-glow-a {
+  0%, 100% { opacity: 0.15; filter: blur(60px); }
+  50%       { opacity: 0.22; filter: blur(90px); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.glow-ring {
+  animation: glow-pulse 1.6s ease-in-out infinite;
+}
+
+.status-blink {
+  animation: status-tick 1.8s ease-in-out infinite;
+}
+
+.lucide-spin {
+  animation: spin 1s linear infinite;
+}
+
+.verdict-glow {
+  animation: verdict-glow-a 2.4s ease-in-out infinite;
+}
+
+/* ── Agent card marquee ──────────────────────────────────────────────
+   The track renders the card array twice, so a -50% translation lands
+   exactly on the second copy for a seamless loop. Paused on hover via
+   `group-hover:[animation-play-state:paused]` in the markup. */
+@keyframes agent-marquee-x {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.agent-marquee {
+  animation: agent-marquee-x 36s linear infinite;
+  will-change: transform;
+}
+
+/* Respect users who've asked the OS for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  .agent-marquee {
+    animation: none;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+}

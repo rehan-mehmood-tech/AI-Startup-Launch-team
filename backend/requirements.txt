@@ -1,0 +1,14 @@
+fastapi>=0.141
+uvicorn[standard]>=0.52
+pydantic>=2.13
+pydantic-settings>=2.10
+python-dotenv>=1.2
+requests>=2.34
+langchain>=1.4
+langchain-core>=1.6
+langchain-groq>=1.1
+langgraph>=1.2
+# Official SerpApi SDK (exposes serpapi.Client).
+# Do NOT install `google-search-results` alongside it: both ship a top-level
+# `serpapi` module and the legacy one shadows serpapi.Client.
+serpapi>=1.1
