@@ -6,6 +6,7 @@ import type { Screen } from '@/lib/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { SplineScene } from '@/components/ui/splite'
 import { Spotlight } from '@/components/ui/spotlight'
+import { ScrollWordReveal } from '@/components/ui/motion-scroll-word-reveal'
 
 const founderMetrics = [
   { stat: '92%', label: 'Failure Rate', body: 'Driven by premature scaling and shipping without validated market demand.' },
@@ -210,20 +211,23 @@ export default function Landing({ onNavigate }: { onNavigate: (s: Screen) => voi
           style={{ background: 'radial-gradient(circle at 80% 12%, rgba(231,210,150,0.065) 0%, transparent 60%)' }}
         />
 
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8 flex flex-col lg:flex-row items-center justify-between gap-8 min-h-[calc(100vh-80px)] relative z-10">
+        {/* No min-height on the row: a full-viewport min-h plus centring was
+            what parked the headline far below the navbar. Row aligns to the
+            top so the text column starts immediately under the nav. */}
+        <div className="relative z-10 pt-6 pb-12 px-6 max-w-7xl mx-auto flex flex-col lg:flex-row items-start justify-between gap-10">
           {/* Left column — copy */}
-          <div className="w-full lg:w-1/2 flex flex-col items-start text-left">
-            <h1 className="font-serif text-4xl sm:text-6xl font-normal leading-[1.05] tracking-[-0.01em] antialiased">
-              <span className="text-white">Your idea. Your evidence.</span>
+          <div className="w-full lg:w-1/2 flex flex-col items-start justify-center gap-4">
+            <h1 className="font-serif text-4xl sm:text-6xl text-white font-normal leading-[1.05] tracking-[-0.01em] antialiased">
+              Your idea. Your evidence.
               <span className="block text-amber-400 mt-1">Your verdict.</span>
             </h1>
 
-            <p className="text-zinc-200 text-base sm:text-lg max-w-xl mt-4 leading-[155%]">
+            <p className="text-zinc-200 text-base sm:text-lg max-w-xl leading-[155%]">
               Every claim tested against live market data, unit economics, and startup failure precedent before you write
               a line of code.
             </p>
 
-            <div className="flex items-center gap-6 mt-7 flex-wrap">
+            <div className="flex items-center gap-6 flex-wrap mt-2">
               <button
                 onClick={() => onNavigate('onboarding')}
                 className="flex items-center gap-2 px-7 py-3.5 rounded-full bg-amber-400 text-[#050405] text-[13px] font-semibold uppercase tracking-[0.08em] hover:bg-amber-300"
@@ -240,22 +244,20 @@ export default function Landing({ onNavigate }: { onNavigate: (s: Screen) => voi
             </div>
           </div>
 
-          {/* Right column — badge sits above the robot; the scene itself is
-              borderless/transparent so it blends into the page background.
-              scale-* + origin-bottom keeps the full body (head to feet) in
-              frame instead of cropping at the knees. */}
-          <div className="w-full lg:w-1/2 flex flex-col items-center gap-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/90 border border-amber-400/40 text-amber-300 text-xs sm:text-sm font-medium shadow-lg shadow-amber-500/10">
-              ✨ Ready to validate your startup idea in 2 minutes?
-            </div>
-
-            <div className="w-full h-[550px] md:h-[650px] bg-transparent border-0 shadow-none relative">
+          {/* Right column — robot stage, with the badge floating at its
+              bottom-right so it adds no height and pushes nothing down. */}
+          <div className="relative w-full lg:w-1/2 flex flex-col items-end justify-center min-h-[420px]">
+            <div className="relative w-full h-[420px] lg:h-[520px]">
               <Spotlight className="-top-40 left-0" size={320} />
               <SplineScene
                 scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
-                className="w-full h-full scale-[0.85] md:scale-90 origin-bottom"
+                className="w-full h-full scale-[0.85] md:scale-90 origin-center"
               />
             </div>
+
+            <span className="absolute bottom-4 right-0 z-20 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/90 border border-amber-400/40 text-amber-300 text-xs sm:text-sm font-medium shadow-lg shadow-amber-500/10">
+              ✨ Ready to validate your startup idea in 2 minutes?
+            </span>
           </div>
         </div>
       </section>
@@ -265,10 +267,11 @@ export default function Landing({ onNavigate }: { onNavigate: (s: Screen) => voi
         <p className="text-[11px] font-medium text-amber-400 uppercase tracking-[0.12em] mb-4">
           [ The Graveyard of Good Ideas ]
         </p>
-        <h2 className="font-serif text-[clamp(34px,4.4vw,52px)] font-normal text-white leading-[110%] tracking-[-0.01em] max-w-[900px]">
-          90% of first-time &amp; solo founders don&apos;t fail on code.
-          <br className="hidden md:block" /> They fail on positioning.
-        </h2>
+        <ScrollWordReveal
+          text="90% of first-time & solo founders don't fail on code. They fail on positioning."
+          className="py-2 max-w-[900px]"
+          headingClassName="text-[clamp(34px,4.4vw,52px)] leading-[110%] tracking-[-0.01em]"
+        />
 
         <div className="mt-8 max-w-[760px] flex flex-col gap-4">
           <p className="text-[15px] text-zinc-200 leading-[160%]">
@@ -286,7 +289,7 @@ export default function Landing({ onNavigate }: { onNavigate: (s: Screen) => voi
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-10">
           {founderMetrics.map(metric => (
-            <div key={metric.stat} className="rounded-xl border border-zinc-700 bg-zinc-950/90 p-6">
+            <div key={metric.stat} className="group rounded-xl border border-zinc-700 bg-zinc-950/90 p-6 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-500/5 hover:border-amber-400/40">
               <div className="text-[32px] font-bold text-amber-400 leading-none mb-2 tabular-nums">{metric.stat}</div>
               <div className="text-[15px] font-semibold text-white mb-2">{metric.label}</div>
               <p className="text-[13px] text-zinc-300 leading-[150%]">{metric.body}</p>
@@ -300,9 +303,11 @@ export default function Landing({ onNavigate }: { onNavigate: (s: Screen) => voi
         <p className="text-[11px] font-medium text-amber-400 uppercase tracking-[0.12em] mb-4">
           [ Why Strategic Clarity Matters ]
         </p>
-        <h2 className="font-serif text-[clamp(32px,3.8vw,46px)] font-normal text-white leading-[112%] tracking-[-0.01em] max-w-[820px]">
-          The best builders validate the assumption before they open the IDE.
-        </h2>
+        <ScrollWordReveal
+          text="The best builders validate the assumption before they open the IDE."
+          className="py-2 max-w-[820px]"
+          headingClassName="text-[clamp(32px,3.8vw,46px)] leading-[112%] tracking-[-0.01em]"
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
           <div className="flex flex-col gap-4">
@@ -318,7 +323,7 @@ export default function Landing({ onNavigate }: { onNavigate: (s: Screen) => voi
             </p>
           </div>
 
-          <div className="rounded-xl border border-zinc-700 bg-zinc-950/90 p-6 flex flex-col gap-4">
+          <div className="rounded-xl border border-zinc-700 bg-zinc-950/90 p-6 flex flex-col gap-4 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-500/5 hover:border-amber-400/40">
             <p className="text-[11px] font-medium text-zinc-300 uppercase tracking-[0.12em]">
               What the pipeline replaces
             </p>
@@ -363,7 +368,7 @@ export default function Landing({ onNavigate }: { onNavigate: (s: Screen) => voi
           {/* Agent grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
             {pipelinePreviewAgents.map(agent => (
-              <div key={agent.name} className="rounded-lg border border-zinc-700 bg-zinc-900/95 p-3.5">
+              <div key={agent.name} className="rounded-lg border border-zinc-700 bg-zinc-900/95 p-3.5 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl hover:shadow-amber-500/5 hover:border-amber-400/40">
                 <div className="flex items-center justify-between gap-2 mb-1.5">
                   <span className="text-[13px] font-semibold text-white">{agent.name}</span>
                   <span
@@ -405,10 +410,10 @@ export default function Landing({ onNavigate }: { onNavigate: (s: Screen) => voi
           {features.map((f) => (
             <div
               key={f.n}
-              className="bg-zinc-950/90 p-8 flex flex-col gap-3"
+              className="group bg-zinc-950/90 p-8 flex flex-col gap-3 transition-colors duration-300 hover:bg-zinc-900"
             >
               <NumericTag n={f.n} label={f.label} />
-              <h3 className="text-[18px] font-semibold text-white leading-[120%] mt-1">{f.title}</h3>
+              <h3 className="text-[18px] font-semibold text-white leading-[120%] mt-1 transition-colors duration-300 group-hover:text-amber-300">{f.title}</h3>
               <p className="text-[13px] text-zinc-300 leading-[145%]">{f.body}</p>
             </div>
           ))}
