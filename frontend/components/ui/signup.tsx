@@ -2,14 +2,23 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { AuthShell, FormMessage, GoogleButton, OrDivider, authInputClass } from '@/components/ui/auth-shared'
+import { useRouter, useSearchParams } from 'next/navigation'
+import {
+  AuthShell,
+  FormMessage,
+  GoogleButton,
+  OrDivider,
+  authButtonClass,
+  authInputClass,
+  authLabelClass,
+  safeNext,
+} from '@/components/ui/auth-shared'
+import { PasswordInput } from '@/components/ui/password-input'
 import { supabase } from '@/lib/supabase/client'
 
 export default function Signup() {
   const router = useRouter()
+  const next = safeNext(useSearchParams().get('next'))
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -24,7 +33,7 @@ export default function Signup() {
     setNotice(null)
 
     // full_name is stored in auth metadata; the handle_new_user() trigger in
-    // database_schema.sql copies it into public.profiles.
+    // database_schema.sql copies it into public.profiles. The PDF header uses it.
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -44,20 +53,20 @@ export default function Signup() {
       setNotice('Check your inbox to confirm your email, then sign in.')
       return
     }
-    router.push('/onboarding')
+    router.push(next)
   }
 
   return (
     <AuthShell title="Create your account" subtitle="Start validating your ideas in minutes">
-      <GoogleButton onError={setError} />
+      <GoogleButton onError={setError} next={next} />
       <OrDivider />
 
       <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="full-name" className="text-xs font-medium text-zinc-200">
+          <label htmlFor="full-name" className={authLabelClass}>
             Full Name
           </label>
-          <Input
+          <input
             id="full-name"
             autoComplete="name"
             required
@@ -68,10 +77,10 @@ export default function Signup() {
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="signup-email" className="text-xs font-medium text-zinc-200">
+          <label htmlFor="signup-email" className={authLabelClass}>
             Email Address
           </label>
-          <Input
+          <input
             id="signup-email"
             type="email"
             autoComplete="email"
@@ -83,12 +92,11 @@ export default function Signup() {
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="signup-pw" className="text-xs font-medium text-zinc-200">
+          <label htmlFor="signup-pw" className={authLabelClass}>
             Password
           </label>
-          <Input
+          <PasswordInput
             id="signup-pw"
-            type="password"
             autoComplete="new-password"
             required
             minLength={6}
@@ -101,14 +109,17 @@ export default function Signup() {
 
         <FormMessage error={error} notice={notice} />
 
-        <Button type="submit" size="lg" disabled={busy} className="mt-1 h-11 w-full rounded-xl font-semibold">
+        <button type="submit" disabled={busy} className={authButtonClass}>
           {busy ? 'Creating account…' : 'Create Account'}
-        </Button>
+        </button>
       </form>
 
-      <p className="mt-6 text-center text-xs text-zinc-400">
+      <p className="mt-6 text-center text-xs text-[#6E6B64]">
         Already have an account?{' '}
-        <Link href="/login" className="font-medium text-white underline-offset-4 hover:underline hover:text-amber-300">
+        <Link
+          href={next === '/validate' ? '/login' : `/login?next=${encodeURIComponent(next)}`}
+          className="font-medium text-[#F5F3EF] underline-offset-4 hover:text-[#E7D296] hover:underline"
+        >
           Sign in
         </Link>
       </p>

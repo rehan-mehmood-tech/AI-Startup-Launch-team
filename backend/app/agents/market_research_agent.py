@@ -16,6 +16,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, ValidationError
 
 from app.agents.base_agent import get_llm
+from app.agents.hitl_context import hitl_context_block
 from app.agents.prompts.market_research_prompt import CORRECTIVE_RETRY_TEMPLATE, SYSTEM_PROMPT
 from app.models.agent_output_schemas import MarketResearchOutput
 from app.models.schemas import MarketResearchInput, SerpIntelligenceBundle
@@ -88,6 +89,7 @@ def _build_user_prompt(req: MarketResearchInput, bundle: SerpIntelligenceBundle)
         "SERP_DATA (verified live search intelligence — the ONLY source of truth for "
         "competitors, URLs, and trend direction):\n"
         f"{_bundle_to_prompt_json(bundle)}\n\n"
+        f"{hitl_context_block(req, max_previous_chars=800)}\n\n"
         "Using only the above, return the MarketResearchOutput JSON object now."
     )
 

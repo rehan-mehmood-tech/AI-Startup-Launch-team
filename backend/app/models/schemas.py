@@ -5,11 +5,39 @@ Strict LLM *output* contracts live in agent_output_schemas.py.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.models.agent_output_schemas import MarketResearchOutput, MvpFeatures, PricingOutput, ProductStrategyOutput
+from app.models.agent_output_schemas import (
+    MarketingOutput,
+    MarketResearchOutput,
+    MvpFeatures,
+    PricingOutput,
+    ProductStrategyOutput,
+)
+
+
+# ---------------------------------------------------------------------------
+# Human-in-the-loop context shared by every sub-agent input
+# ---------------------------------------------------------------------------
+
+
+class HitlContext(BaseModel):
+    """Optional fields that let a founder steer one agent at a time.
+
+    - founder_notes: free-text context from "Other" answers that don't fit an
+      enum field (e.g. a delivery mechanism outside Web/Mobile/API/Hybrid).
+    - revision_request: a counter-argument or refinement for a re-run.
+    - previous_output: the output being revised, so the agent can change what
+      was asked for and keep the rest.
+    """
+
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    founder_notes: str | None = Field(default=None, max_length=2000)
+    revision_request: str | None = Field(default=None, max_length=2000)
+    previous_output: dict[str, Any] | None = None
 
 # ---------------------------------------------------------------------------
 # Agent 1 — Market Research: wizard inputs (Steps 1–2)
@@ -24,7 +52,7 @@ class AudienceDemographics(BaseModel):
     segment: str | None = Field(default=None, max_length=120, examples=["university students"])
 
 
-class MarketResearchInput(BaseModel):
+class MarketResearchInput(HitlContext):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     core_idea: str = Field(min_length=10, max_length=2000)
@@ -149,7 +177,7 @@ class VisualVibeColorPalette(BaseModel):
     background: str | None = Field(default=None, max_length=60, examples=["near-black"])
 
 
-class ProductStrategistInput(BaseModel):
+class ProductStrategistInput(HitlContext):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     market_research: MarketResearchOutput = Field(
@@ -169,7 +197,7 @@ class ProductStrategistInput(BaseModel):
 TargetCustomerSegment = Literal["B2C", "SMB", "Mid-Market", "Enterprise"]
 
 
-class PricingAgentInput(BaseModel):
+class PricingAgentInput(HitlContext):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     mvp_features: MvpFeatures = Field(
@@ -215,7 +243,7 @@ class MarketingBudgetRange(BaseModel):
         return v
 
 
-class MarketingAgentInput(BaseModel):
+class MarketingAgentInput(HitlContext):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     mvp_strategy: ProductStrategyOutput = Field(
@@ -299,3 +327,14 @@ class OrchestratorRerunInput(BaseModel):
         default=None,
         description="Reuse this instead of re-calling Agent 3 (omit when rerun_from is market_research/product_strategist/pricing).",
     )
+
+
+class OrchestratorSynthesizeInput(BaseModel):
+    """Final step of the human-in-the-loop flow: synthesise a verdict from the
+    four outputs the founder already approved, without re-running any agent."""
+
+    intake: OrchestratorInput
+    market_research_output: MarketResearchOutput
+    product_strategy_output: ProductStrategyOutput
+    pricing_output: PricingOutput
+    marketing_output: MarketingOutput

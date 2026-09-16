@@ -4,18 +4,29 @@ import { useState } from 'react'
 import { GoogleIcon } from '@/components/ui/brand-icons'
 import { supabase } from '@/lib/supabase/client'
 
-/** Shared building blocks for the login and signup pages. */
+/** Shared building blocks for the login and signup pages, on the global
+ * obsidian + champagne palette. */
 
 export const authInputClass =
-  'h-11 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3.5 text-sm text-white placeholder:text-zinc-500 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20'
+  'h-11 w-full rounded-xl border border-[#2A2722] bg-[#0A0908] px-3.5 text-sm text-[#F5F3EF] placeholder:text-[#6E6B64] outline-none transition-colors focus:border-[#E7D296] focus:ring-2 focus:ring-[#E7D296]/15'
+
+export const authLabelClass = 'text-xs font-medium text-[#A8A49C]'
+
+export const authButtonClass =
+  'mt-1 inline-flex h-11 w-full items-center justify-center rounded-xl bg-[#E7D296] text-sm font-semibold text-[#050405] transition-colors hover:bg-[#F0DFAE] disabled:cursor-not-allowed disabled:opacity-60'
+
+/** Only same-site relative paths are honored, so `?next=` can't redirect off-site. */
+export function safeNext(next: string | null): string {
+  return next && next.startsWith('/') && !next.startsWith('//') ? next : '/validate'
+}
 
 export function AuthShell({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <section className="relative z-10 flex min-h-[calc(100dvh-80px)] items-center justify-center px-6 py-16">
-      <div className="w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-950/90 p-7 shadow-2xl">
+    <section className="relative z-10 flex min-h-[calc(100dvh-80px)] items-center justify-center px-4 py-16 sm:px-6">
+      <div className="w-full max-w-sm rounded-2xl border border-[#2A2722] bg-[#0A0908]/95 p-6 shadow-[0_24px_64px_rgba(0,0,0,0.5)] sm:p-7">
         <div className="flex flex-col items-center gap-2 text-center">
-          <h1 className="font-serif text-3xl font-normal text-white">{title}</h1>
-          <p className="text-sm text-zinc-300">{subtitle}</p>
+          <h1 className="font-serif text-3xl font-normal text-[#F5F3EF]">{title}</h1>
+          <p className="text-sm text-[#A8A49C]">{subtitle}</p>
         </div>
         {children}
       </div>
@@ -26,9 +37,9 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
 export function OrDivider() {
   return (
     <div className="my-6 flex items-center gap-3">
-      <span className="h-px flex-1 bg-zinc-800" />
-      <span className="text-[11px] font-medium uppercase tracking-widest text-zinc-400">or</span>
-      <span className="h-px flex-1 bg-zinc-800" />
+      <span className="h-px flex-1 bg-[#2A2722]" />
+      <span className="text-[11px] font-medium uppercase tracking-widest text-[#6E6B64]">or</span>
+      <span className="h-px flex-1 bg-[#2A2722]" />
     </div>
   )
 }
@@ -38,14 +49,14 @@ export function OrDivider() {
  * Supabase dashboard (Authentication → Providers); until it is, Supabase
  * returns an error, which is surfaced to the user rather than failing silently.
  */
-export function GoogleButton({ onError }: { onError: (message: string) => void }) {
+export function GoogleButton({ onError, next = '/validate' }: { onError: (message: string) => void; next?: string }) {
   const [busy, setBusy] = useState(false)
 
   async function handleClick() {
     setBusy(true)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/onboarding` },
+      options: { redirectTo: `${window.location.origin}${next}` },
     })
     if (error) {
       onError(error.message)
@@ -58,7 +69,7 @@ export function GoogleButton({ onError }: { onError: (message: string) => void }
       type="button"
       onClick={handleClick}
       disabled={busy}
-      className="mt-7 inline-flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-zinc-700 bg-zinc-900 px-4 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-60"
+      className="mt-7 inline-flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-[#2A2722] bg-[#15130F] px-4 text-sm font-medium text-[#F5F3EF] transition-colors hover:border-[#43443E] hover:bg-[#1F1C17] disabled:opacity-60"
     >
       <GoogleIcon className="size-4" />
       {busy ? 'Redirecting…' : 'Continue with Google'}
@@ -69,14 +80,14 @@ export function GoogleButton({ onError }: { onError: (message: string) => void }
 export function FormMessage({ error, notice }: { error: string | null; notice: string | null }) {
   if (error) {
     return (
-      <p role="alert" className="text-xs text-red-300">
+      <p role="alert" className="text-xs text-[#E3A28C]">
         {error}
       </p>
     )
   }
   if (notice) {
     return (
-      <p role="status" className="text-xs text-amber-300">
+      <p role="status" className="text-xs text-[#E7D296]">
         {notice}
       </p>
     )

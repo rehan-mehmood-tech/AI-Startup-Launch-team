@@ -32,6 +32,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     setScrollPct(0)
   }, [pathname])
 
+  // The app workspace and public shared reports carry their own chrome.
+  const bare = pathname.startsWith('/validate') || pathname.startsWith('/report/share')
+  if (bare) return <>{children}</>
+
   return (
     // Transparent + z-10 so the fixed SilkBackground canvas (z-0) shows
     // through. The page's base colour now comes from body in globals.css.

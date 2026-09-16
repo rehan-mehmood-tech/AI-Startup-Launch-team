@@ -25,6 +25,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from app.agents.base_agent import get_llm
+from app.agents.hitl_context import hitl_context_block
 from app.agents.prompts.marketing_prompt import CORRECTIVE_RETRY_TEMPLATE, SYSTEM_PROMPT
 from app.config import get_settings
 from app.models.agent_output_schemas import (
@@ -96,6 +97,7 @@ def _build_user_prompt(req: MarketingAgentInput) -> str:
         f"{json.dumps(pricing, ensure_ascii=False)}\n\n"
         "USER_INPUT (tone, budget, launch timeline):\n"
         f"{json.dumps(user_input, ensure_ascii=False)}\n\n"
+        f"{hitl_context_block(req)}\n\n"
         "Using only the above, return the recommended_channels/brand_taglines/sample_campaign_posts JSON now."
     )
 

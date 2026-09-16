@@ -357,6 +357,7 @@ class OrchestratorOutput(_Strict):
     failure_case_study: list[FailureCaseStudyEntry] = Field(default_factory=list)
     compiled_dashboard: CompiledDashboard
     verified_resources: list[VerifiedResource] = Field(default_factory=list)
+    strategic_recommendations: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _enforce_rules(self) -> "OrchestratorOutput":

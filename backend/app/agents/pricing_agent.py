@@ -25,6 +25,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from app.agents.base_agent import get_llm
+from app.agents.hitl_context import hitl_context_block
 from app.agents.prompts.pricing_prompt import CORRECTIVE_RETRY_TEMPLATE, SYSTEM_PROMPT
 from app.config import get_settings
 from app.models.agent_output_schemas import (
@@ -97,6 +98,7 @@ def _build_user_prompt(req: PricingAgentInput, calc: PricingCalculationResult) -
         "MVP_FEATURES (bucket these across tiers using the exact names given):\n"
         f"{json.dumps(mvp_features, ensure_ascii=False)}\n\n"
         f"TARGET_CUSTOMER_SEGMENT: {req.target_customer_segment}\n\n"
+        f"{hitl_context_block(req)}\n\n"
         "Return the feature-bucketing/billing-cycle JSON object now."
     )
 

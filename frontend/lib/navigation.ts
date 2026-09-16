@@ -9,8 +9,8 @@ export type Screen = "landing" | "onboarding" | "pipeline" | "dashboard" | "chec
 
 export const SCREEN_ROUTES: Record<Screen, string> = {
   landing: "/",
-  onboarding: "/onboarding",
-  pipeline: "/pipeline",
+  onboarding: "/validate",
+  pipeline: "/validate",
   dashboard: "/dashboard",
   checkout: "/checkout",
   pricing: "/pricing",

@@ -49,6 +49,7 @@ from app.models.schemas import (
     MarketingAgentInput,
     OrchestratorInput,
     OrchestratorRerunInput,
+    OrchestratorSynthesizeInput,
     PricingAgentInput,
     ProductStrategistInput,
 )
@@ -76,6 +77,7 @@ class _OrchestratorQualitative(BaseModel):
 
     executive_summary: str = Field(min_length=1)
     validation_reasoning: list[_ValidationSignalQualitative] = Field(min_length=1, max_length=6)
+    strategic_recommendations: list[str] = Field(min_length=2, max_length=5)
 
 
 class _StageResults(BaseModel):
@@ -276,6 +278,21 @@ def _fallback_qualitative(
             "This idea clears the unit-economics and market-confidence bar on the data collected. That is "
             "not a guarantee of success — validate the riskiest assumption with real customers next."
         )
+    if pipeline_incomplete:
+        recommendations = [
+            "Re-run the unavailable stage before acting on any part of this report.",
+            "Treat every downstream figure as provisional until the full pipeline completes.",
+        ]
+    elif status == "Red":
+        recommendations = [
+            "Fix the flagged unit economics or market-signal gaps before spending on acquisition.",
+            "Re-check pricing and customer acquisition cost assumptions against real customer conversations.",
+        ]
+    else:
+        recommendations = [
+            "Interview target customers to confirm the top pain point before building beyond the MVP.",
+            "Launch on the highest-priority marketing channel first and measure real CAC against the estimate.",
+        ]
     reasoning = [
         _ValidationSignalQualitative(
             signal=f"Deterministic status computation returned '{status}' from sub-agent signals"
@@ -284,7 +301,9 @@ def _fallback_qualitative(
             weight="high",
         )
     ]
-    return _OrchestratorQualitative(executive_summary=summary, validation_reasoning=reasoning)
+    return _OrchestratorQualitative(
+        executive_summary=summary, validation_reasoning=reasoning, strategic_recommendations=recommendations
+    )
 
 
 def _build_calculated_data(
@@ -295,8 +314,40 @@ def _build_calculated_data(
     pricing_output: PricingOutput | None,
     marketing_output: MarketingOutput | None,
     failure_cases: list[FailureCaseStudyEntry],
+    ps_output: ProductStrategyOutput | None = None,
 ) -> dict:
+    # Compact digests of the approved outputs: recommendations may only cite
+    # what is in here, which keeps them grounded without spending the
+    # orchestrator key's TPM budget on the full outputs.
     return {
+        "market_digest": (
+            {
+                "top_pain_points": [p.pain_point for p in mr_output.customer_pain_points[:3]],
+                "competitors": [c.name for c in mr_output.competitor_analysis[:5]],
+            }
+            if mr_output
+            else None
+        ),
+        "product_digest": (
+            {
+                "value_proposition": ps_output.value_proposition,
+                "must_have_features": [f.feature for f in ps_output.mvp_features.must_have],
+            }
+            if ps_output
+            else None
+        ),
+        "pricing_digest": (
+            {
+                "starter_price": pricing_output.pricing_tiers.starter.price,
+                "pro_price": pricing_output.pricing_tiers.pro.price,
+                "months_to_min_profit_target": pricing_output.roi_projection.months_to_min_profit_target,
+            }
+            if pricing_output
+            else None
+        ),
+        "marketing_digest": (
+            {"channels": [c.channel for c in marketing_output.recommended_channels]} if marketing_output else None
+        ),
         "validation_status": status,
         "pipeline_incomplete": pipeline_incomplete,
         "low_information_warning": preflight.model_dump(),
@@ -320,7 +371,7 @@ async def _synthesize_narrative(
     try:
         llm = get_llm(
             temperature=0.1,
-            max_tokens=1200,
+            max_tokens=1400,
             api_key=settings.groq_orchestrator_agent_api_key or None,
         )
         structured_llm = llm.with_structured_output(_OrchestratorQualitative, method="json_schema", strict=True)
@@ -331,7 +382,8 @@ async def _synthesize_narrative(
                     "CALCULATED_DATA (final and authoritative):\n"
                     f"{json.dumps(calculated_data, ensure_ascii=False)}\n\n"
                     f"FOUNDER'S CORE IDEA: {req.market_research.core_idea}\n\n"
-                    "Return the executive_summary/validation_reasoning JSON now."
+                    "Return the executive_summary/validation_reasoning/strategic_recommendations JSON now. "
+                    "Recommendations must reference only facts present in CALCULATED_DATA."
                 )
             ),
         ]
@@ -354,7 +406,9 @@ async def _synthesize_narrative(
     return _fallback_qualitative(status, preflight, pipeline_incomplete)
 
 
-async def _finalize(req: OrchestratorInput, results: _StageResults, run_id: str) -> OrchestratorOutput:
+async def _compose_output(req: OrchestratorInput, results: _StageResults) -> OrchestratorOutput:
+    """Pure synthesis: deterministic status/risk computation + LLM narrative.
+    No persistence, so the HITL synthesize path can reuse it."""
     mr_output = results.market_research if isinstance(results.market_research, MarketResearchOutput) else None
     ps_output = results.product_strategist if isinstance(results.product_strategist, ProductStrategyOutput) else None
     pricing_output = results.pricing if isinstance(results.pricing, PricingOutput) else None
@@ -368,7 +422,7 @@ async def _finalize(req: OrchestratorInput, results: _StageResults, run_id: str)
     failure_cases = _build_failure_case_study(status, risk_tags)
     verified_resources = _build_verified_resources(mr_output)
     calculated_data = _build_calculated_data(
-        status, preflight, pipeline_incomplete, mr_output, pricing_output, marketing_output, failure_cases
+        status, preflight, pipeline_incomplete, mr_output, pricing_output, marketing_output, failure_cases, ps_output
     )
 
     qualitative = await _synthesize_narrative(req, calculated_data, status, preflight, pipeline_incomplete)
@@ -393,7 +447,18 @@ async def _finalize(req: OrchestratorInput, results: _StageResults, run_id: str)
             marketing=_dump_stage(results.marketing, "final synthesis"),
         ),
         verified_resources=verified_resources,
+        strategic_recommendations=qualitative.strategic_recommendations,
     )
+    return output
+
+
+async def _finalize(req: OrchestratorInput, results: _StageResults, run_id: str) -> OrchestratorOutput:
+    output = await _compose_output(req, results)
+    pipeline_incomplete = not all(
+        isinstance(x, (MarketResearchOutput, ProductStrategyOutput, PricingOutput, MarketingOutput))
+        for x in (results.market_research, results.product_strategist, results.pricing, results.marketing)
+    )
+    status = output.validation_status
 
     # Persist the orchestrator's own synthesis as its own agent_runs row, the
     # verified_resources into resource_links, then close out the workspace's
@@ -406,7 +471,7 @@ async def _finalize(req: OrchestratorInput, results: _StageResults, run_id: str)
         status="degraded" if pipeline_incomplete else "succeeded",
     )
     await agent_persistence.record_verified_resources(
-        run_id, [r.model_dump(mode="json") for r in verified_resources]
+        run_id, [r.model_dump(mode="json") for r in output.verified_resources]
     )
     await run_state.transition(run_id, "compiled", validation_status=status)
     await run_state.transition(run_id, "delivered", validation_status=status)
@@ -441,3 +506,16 @@ async def run_orchestrator_rerun(req: OrchestratorRerunInput) -> OrchestratorOut
         pricing_output=req.pricing_output,
     )
     return await _finalize(req.original_input, results, req.workspace_id)
+
+
+async def synthesize_from_approved(req: OrchestratorSynthesizeInput) -> OrchestratorOutput:
+    """HITL path: the founder already approved each sub-agent's output one by
+    one, so no agent is re-run -- the orchestrator only aggregates the four
+    approved outputs into the verdict, summary and recommendations."""
+    results = _StageResults(
+        market_research=req.market_research_output,
+        product_strategist=req.product_strategy_output,
+        pricing=req.pricing_output,
+        marketing=req.marketing_output,
+    )
+    return await _compose_output(req.intake, results)

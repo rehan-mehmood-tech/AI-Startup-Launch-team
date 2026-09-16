@@ -16,6 +16,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, ValidationError
 
 from app.agents.base_agent import get_llm
+from app.agents.hitl_context import hitl_context_block
 from app.agents.prompts.product_strategist_prompt import CORRECTIVE_RETRY_TEMPLATE, SYSTEM_PROMPT
 from app.config import get_settings
 from app.models.agent_output_schemas import ProductStrategyOutput
@@ -48,6 +49,7 @@ def _build_user_prompt(req: ProductStrategistInput) -> str:
         f"{json.dumps(market_research, ensure_ascii=False)}\n\n"
         "USER_INPUT (founder-provided core feature, delivery mechanism, visual vibe):\n"
         f"{json.dumps(user_input, ensure_ascii=False)}\n\n"
+        f"{hitl_context_block(req)}\n\n"
         "Using only the above, return the ProductStrategyOutput JSON object now."
     )
 

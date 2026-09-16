@@ -2,9 +2,13 @@
 counter-questioning/re-routing endpoint."""
 from fastapi import APIRouter
 
-from app.agents.orchestrator_agent import run_orchestrator_pipeline, run_orchestrator_rerun
+from app.agents.orchestrator_agent import (
+    run_orchestrator_pipeline,
+    run_orchestrator_rerun,
+    synthesize_from_approved,
+)
 from app.models.agent_output_schemas import OrchestratorOutput
-from app.models.schemas import OrchestratorInput, OrchestratorRerunInput
+from app.models.schemas import OrchestratorInput, OrchestratorRerunInput, OrchestratorSynthesizeInput
 
 router = APIRouter(prefix="/agents", tags=["orchestrator"])
 
@@ -24,3 +28,10 @@ async def orchestrator_rerun(payload: OrchestratorRerunInput) -> OrchestratorOut
     stage forward, reusing whatever upstream sub-agent outputs are passed in
     instead of paying for the whole pipeline again."""
     return await run_orchestrator_rerun(payload)
+
+
+@router.post("/orchestrator/synthesize", response_model=OrchestratorOutput)
+async def orchestrator_synthesize(payload: OrchestratorSynthesizeInput) -> OrchestratorOutput:
+    """Human-in-the-loop final step: aggregate four founder-approved sub-agent
+    outputs into the executive verdict without re-running any agent."""
+    return await synthesize_from_approved(payload)

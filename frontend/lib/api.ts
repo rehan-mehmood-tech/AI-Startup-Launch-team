@@ -39,6 +39,36 @@ async function postJson<TResponse>(path: string, body: unknown): Promise<TRespon
   return res.json() as Promise<TResponse>;
 }
 
+/** Human-in-the-loop: one agent per request, plus a synthesize-only
+ * orchestrator call over the founder-approved outputs. */
+export const hitlApi = {
+  marketResearch: (body: unknown) => postJson<unknown>("/api/v1/agents/market-research", body),
+  productStrategist: (body: unknown) => postJson<unknown>("/api/v1/agents/product-strategist", body),
+  pricing: (body: unknown) => postJson<unknown>("/api/v1/agents/pricing", body),
+  marketing: (body: unknown) => postJson<unknown>("/api/v1/agents/marketing", body),
+  synthesize: <T,>(body: unknown) => postJson<T>("/api/v1/agents/orchestrator/synthesize", body),
+};
+
+/** Turns an ApiError body (often FastAPI's JSON `detail`) into one readable line. */
+export function describeError(err: unknown): string {
+  if (err instanceof ApiError) {
+    try {
+      const parsed = JSON.parse(err.message) as { detail?: unknown };
+      if (typeof parsed.detail === "string") return parsed.detail;
+      if (Array.isArray(parsed.detail)) {
+        return parsed.detail
+          .map(d => (d && typeof d === "object" && "msg" in d ? String((d as { msg: unknown }).msg) : String(d)))
+          .join("; ");
+      }
+    } catch {
+      /* not JSON */
+    }
+    return err.message || `Request failed (${err.status})`;
+  }
+  if (err instanceof TypeError) return "Can't reach the validation server. Check that the backend is running.";
+  return err instanceof Error ? err.message : "Something went wrong.";
+}
+
 /** Runs the full 4-agent pipeline + orchestrator synthesis. Can take a couple
  * of minutes — the caller is expected to show a loading state. */
 export function runOrchestratorPipeline(input: OrchestratorInput): Promise<OrchestratorOutput> {

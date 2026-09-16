@@ -2,14 +2,23 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { AuthShell, FormMessage, GoogleButton, OrDivider, authInputClass } from '@/components/ui/auth-shared'
+import { useRouter, useSearchParams } from 'next/navigation'
+import {
+  AuthShell,
+  FormMessage,
+  GoogleButton,
+  OrDivider,
+  authButtonClass,
+  authInputClass,
+  authLabelClass,
+  safeNext,
+} from '@/components/ui/auth-shared'
+import { PasswordInput } from '@/components/ui/password-input'
 import { supabase } from '@/lib/supabase/client'
 
 export default function Login16() {
   const router = useRouter()
+  const next = safeNext(useSearchParams().get('next'))
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
@@ -27,13 +36,13 @@ export default function Login16() {
       setError(error.message)
       return
     }
-    router.push('/onboarding')
+    router.push(next)
   }
 
   async function handleForgot() {
     setError(null)
     if (!email) {
-      setNotice('Enter your email above, then click “Forgot?” again.')
+      setNotice('Enter your email above, then click “Forgot password?” again.')
       return
     }
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -45,15 +54,15 @@ export default function Login16() {
 
   return (
     <AuthShell title="Welcome back" subtitle="Sign in to your validation account">
-      <GoogleButton onError={setError} />
+      <GoogleButton onError={setError} next={next} />
       <OrDivider />
 
       <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="email" className="text-xs font-medium text-zinc-200">
+          <label htmlFor="email" className={authLabelClass}>
             Email
           </label>
-          <Input
+          <input
             id="email"
             type="email"
             autoComplete="email"
@@ -66,16 +75,15 @@ export default function Login16() {
         </div>
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
-            <label htmlFor="pw" className="text-xs font-medium text-zinc-200">
+            <label htmlFor="pw" className={authLabelClass}>
               Password
             </label>
-            <button type="button" onClick={handleForgot} className="text-xs text-zinc-400 hover:text-amber-300">
+            <button type="button" onClick={handleForgot} className="text-xs text-[#6E6B64] hover:text-[#E7D296]">
               Forgot password?
             </button>
           </div>
-          <Input
+          <PasswordInput
             id="pw"
-            type="password"
             autoComplete="current-password"
             required
             placeholder="••••••••"
@@ -87,14 +95,17 @@ export default function Login16() {
 
         <FormMessage error={error} notice={notice} />
 
-        <Button type="submit" size="lg" disabled={busy} className="mt-1 h-11 w-full rounded-xl font-semibold">
+        <button type="submit" disabled={busy} className={authButtonClass}>
           {busy ? 'Signing in…' : 'Sign in'}
-        </Button>
+        </button>
       </form>
 
-      <p className="mt-6 text-center text-xs text-zinc-400">
+      <p className="mt-6 text-center text-xs text-[#6E6B64]">
         New here?{' '}
-        <Link href="/signup" className="font-medium text-white underline-offset-4 hover:underline hover:text-amber-300">
+        <Link
+          href={next === '/validate' ? '/signup' : `/signup?next=${encodeURIComponent(next)}`}
+          className="font-medium text-[#F5F3EF] underline-offset-4 hover:text-[#E7D296] hover:underline"
+        >
           Create an account
         </Link>
       </p>
