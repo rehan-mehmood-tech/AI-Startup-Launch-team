@@ -7,6 +7,9 @@ import { supabase } from '@/lib/supabase/client'
 import { SplineScene } from '@/components/ui/splite'
 import { Spotlight } from '@/components/ui/spotlight'
 import { ScrollWordReveal } from '@/components/ui/motion-scroll-word-reveal'
+import { ShimmerText } from '@/components/ui/shimmer-text'
+import { Footer } from '@/components/ui/footer'
+import { useTypewriter } from '@/lib/useTypewriter'
 
 const founderMetrics = [
   { stat: '92%', label: 'Failure Rate', body: 'Driven by premature scaling and shipping without validated market demand.' },
@@ -179,7 +182,16 @@ const timeline = [
 ]
 
 
+const HERO_PHRASES = [
+  'Real market evidence from real potential customers before writing code.',
+  'An autonomous AI board of directors analyzing your risk and revenue strategy.',
+  'Complete customer validation report & pitch deck generated in 2 minutes.',
+]
+const LONGEST_HERO_PHRASE = HERO_PHRASES.reduce((a, b) => (b.length > a.length ? b : a))
+
 export default function Landing({ onNavigate }: { onNavigate: (s: Screen) => void }) {
+  const typedPhrase = useTypewriter(HERO_PHRASES, { typeMs: 35, deleteMs: 15, pauseMs: 1500, gapMs: 250 })
+
   // Drives the footer CTA: signed-in founders go straight to the wizard,
   // guests are routed to pricing first.
   const [isSignedIn, setIsSignedIn] = useState(false)
@@ -204,30 +216,55 @@ export default function Landing({ onNavigate }: { onNavigate: (s: Screen) => voi
           min-h-[760px] was pushing the badge and headline far down the fold.
           min-h is kept only so the topographic mesh anchored to the bottom
           still has room to render. */}
-      {/* ── Hero: split layout, text left / interactive 3D right ── */}
+      {/* ── Hero: typewriter headline left / interactive 3D right ── */}
       <section className="relative overflow-hidden">
         <div
           className="absolute top-0 right-0 w-[700px] h-[700px] pointer-events-none"
           style={{ background: 'radial-gradient(circle at 80% 12%, rgba(231,210,150,0.065) 0%, transparent 60%)' }}
         />
 
-        {/* No min-height on the row: a full-viewport min-h plus centring was
-            what parked the headline far below the navbar. Row aligns to the
-            top so the text column starts immediately under the nav. */}
-        <div className="relative z-10 pt-6 pb-12 px-6 max-w-7xl mx-auto flex flex-col lg:flex-row items-start justify-between gap-10">
+        {/* Grid, not flex: the requested class string mixed `flex` and `grid`,
+            which set `display` twice and leave the winner to CSS source order.
+            `items-center` vertically centres both columns within the viewport. */}
+        <div className="relative z-10 min-h-[calc(100vh-80px)] w-full max-w-7xl mx-auto px-6 py-4 grid grid-cols-1 lg:grid-cols-12 items-center gap-8">
           {/* Left column — copy */}
-          <div className="w-full lg:w-1/2 flex flex-col items-start justify-center gap-4">
-            <h1 className="font-serif text-4xl sm:text-6xl text-white font-normal leading-[1.05] tracking-[-0.01em] antialiased">
-              Your idea. Your evidence.
-              <span className="block text-amber-400 mt-1">Your verdict.</span>
+          <div className="lg:col-span-7 flex flex-col items-start justify-center gap-5">
+            <h1 className="font-serif text-3xl sm:text-5xl leading-tight font-normal text-white antialiased">
+              <span className="block">Your Idea, Our Validation.</span>
+
+              {/* Screen readers get the full, stable text; the animated
+                  character-by-character version is hidden from them so it
+                  isn't re-announced on every keystroke. */}
+              <span className="sr-only">{HERO_PHRASES.join(' ')}</span>
+
+              {/* The invisible longest phrase reserves the tallest height the
+                  typed line will ever need, so the layout doesn't jump as
+                  phrases of different lengths wrap onto more lines. */}
+              <span aria-hidden="true" className="grid mt-2">
+                <span className="invisible [grid-area:1/1]">{LONGEST_HERO_PHRASE}|</span>
+                <span className="[grid-area:1/1]">
+                  <ShimmerText duration={1.6} delay={0} className="text-3xl sm:text-5xl font-serif leading-tight">
+                    {typedPhrase}
+                    <span className="animate-pulse">|</span>
+                  </ShimmerText>
+                </span>
+              </span>
             </h1>
 
-            <p className="text-zinc-200 text-base sm:text-lg max-w-xl leading-[155%]">
-              Every claim tested against live market data, unit economics, and startup failure precedent before you write
-              a line of code.
+            <p className="text-zinc-200 text-base sm:text-lg max-w-xl leading-[155%] space-y-1">
+              <span className="block">
+                AI Startup Launch Team turns your raw ideas into market-tested evidence in under two minutes.
+              </span>
+              <span className="block">
+                Our autonomous AI agents analyze risks, poll target customers, and generate real validation reports.
+              </span>
+              <span className="block">
+                Stop building in the dark&mdash;validate unit economics and pitch decks before writing a single line of
+                code.
+              </span>
             </p>
 
-            <div className="flex items-center gap-6 flex-wrap mt-2">
+            <div className="flex items-center gap-6 flex-wrap mt-1">
               <button
                 onClick={() => onNavigate('onboarding')}
                 className="flex items-center gap-2 px-7 py-3.5 rounded-full bg-amber-400 text-[#050405] text-[13px] font-semibold uppercase tracking-[0.08em] hover:bg-amber-300"
@@ -244,9 +281,9 @@ export default function Landing({ onNavigate }: { onNavigate: (s: Screen) => voi
             </div>
           </div>
 
-          {/* Right column — robot stage, with the badge floating at its
-              bottom-right so it adds no height and pushes nothing down. */}
-          <div className="relative w-full lg:w-1/2 flex flex-col items-end justify-center min-h-[420px]">
+          {/* Right column — robot stage (unchanged). Only the column span
+              changed, to fit the 12-column grid; the badge was removed. */}
+          <div className="relative lg:col-span-5 w-full flex flex-col items-end justify-center min-h-[420px]">
             <div className="relative w-full h-[420px] lg:h-[520px]">
               <Spotlight className="-top-40 left-0" size={320} />
               <SplineScene
@@ -254,10 +291,6 @@ export default function Landing({ onNavigate }: { onNavigate: (s: Screen) => voi
                 className="w-full h-full scale-[0.85] md:scale-90 origin-center"
               />
             </div>
-
-            <span className="absolute bottom-4 right-0 z-20 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/90 border border-amber-400/40 text-amber-300 text-xs sm:text-sm font-medium shadow-lg shadow-amber-500/10">
-              ✨ Ready to validate your startup idea in 2 minutes?
-            </span>
           </div>
         </div>
       </section>
@@ -402,7 +435,7 @@ export default function Landing({ onNavigate }: { onNavigate: (s: Screen) => voi
       </section>
 
       {/* ── Bento feature grid ── */}
-      <section className="max-w-[1280px] mx-auto px-8 py-20">
+      <section id="features" className="max-w-[1280px] mx-auto px-8 py-20 scroll-mt-24">
         <p className="text-[11px] font-medium text-amber-400 uppercase tracking-[0.12em] mb-10">
           [ What The Pipeline Covers ]
         </p>
@@ -421,7 +454,7 @@ export default function Landing({ onNavigate }: { onNavigate: (s: Screen) => voi
       </section>
 
       {/* ── 3-up sub-agent teaser cards ── */}
-      <section className="max-w-[1280px] mx-auto px-8 pb-20">
+      <section id="agents" className="max-w-[1280px] mx-auto px-8 pb-20 scroll-mt-24">
         <div className="mb-10">
           <p className="text-[11px] font-medium text-amber-400 uppercase tracking-[0.12em] mb-3">[ Inside The Pipeline ]</p>
           <h2 className="font-serif text-[clamp(36px,4.4vw,52px)] font-normal text-white leading-[104%] tracking-[-0.005em]">
@@ -511,31 +544,7 @@ export default function Landing({ onNavigate }: { onNavigate: (s: Screen) => voi
         </div>
       </section>
 
-      {/* ── Footer ── */}
-      <footer className="border-t border-[#2A2722] px-8 py-12 relative overflow-hidden">
-        <div className="max-w-[1280px] mx-auto flex items-start md:items-center justify-between gap-8 flex-col md:flex-row relative z-10">
-          <div>
-            <div className="text-[15px] font-semibold text-[#F5F3EF] mb-1">AI Startup Launch Team</div>
-            <div className="text-[13px] text-[#6E6B64]">Evidence-anchored validation for founders.</div>
-          </div>
-          <div className="flex gap-8 text-[13px] text-[#6E6B64]">
-            <button onClick={() => onNavigate('faq')} className="hover:text-[#A8A49C] transition-colors">
-              FAQ
-            </button>
-            {['Privacy', 'Terms', 'Contact'].map(l => (
-              <a key={l} href="#" className="hover:text-[#A8A49C] transition-colors">{l}</a>
-            ))}
-          </div>
-        </div>
-        <div className="absolute bottom-0 left-0 right-0 flex items-end justify-center pointer-events-none overflow-hidden h-[80px]">
-          <span
-            className="text-[110px] font-bold leading-none whitespace-nowrap select-none"
-            style={{ color: '#F5F3EF', opacity: 0.025 }}
-          >
-            AI Startup Launch Team
-          </span>
-        </div>
-      </footer>
+      <Footer />
     </main>
   )
 }

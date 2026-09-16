@@ -300,18 +300,18 @@ export default function Dashboard({
           </div>
           <div className="flex items-center gap-3 flex-shrink-0 flex-wrap">
             <button
-              onClick={() => onNavigate('checkout')}
+              onClick={() => onNavigate('pricing')}
               className="flex items-center gap-2 px-6 py-3 rounded-full bg-[#E7D296] text-[#050405] text-[13px] font-semibold uppercase tracking-[0.08em] hover:bg-[#C9B98A] transition-colors"
             >
               <FileDown size={16} strokeWidth={1.5} />
-              Unlock PDF — $20
+              Export PDF — See Plans
             </button>
             <button
               onClick={() => onNavigate('onboarding')}
               className="flex items-center gap-2 px-6 py-3 rounded-full border border-[#43443E] text-[#F5F3EF] text-[13px] font-semibold uppercase tracking-[0.08em] hover:border-[#6E6B64] transition-colors"
             >
               <RotateCcw size={16} strokeWidth={1.5} />
-              Re-run — $10
+              Re-run Validation
             </button>
           </div>
         </div>

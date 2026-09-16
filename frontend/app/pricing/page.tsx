@@ -1,9 +1,5 @@
-'use client'
+import PricingSection3 from '@/components/ui/pricing-section-3'
 
-import Checkout from '@/components/screens/Checkout'
-import { useNavigate } from '@/lib/navigation'
-
-/** Pricing lives on its own route; it renders the same panel as /checkout. */
 export default function Page() {
-  return <Checkout onNavigate={useNavigate()} />
+  return <PricingSection3 />
 }
