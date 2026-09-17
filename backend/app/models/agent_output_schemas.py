@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, StringConstraints, field_validator, model_validator
 
 HttpUrlStr = Annotated[str, StringConstraints(strip_whitespace=True, pattern=r"^https?://\S+$")]
 NonEmptyStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
@@ -14,6 +14,10 @@ Signal = Literal["high", "medium", "low"]
 
 class _Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+    # Human-in-the-loop: the agent's short note to the founder about a revision.
+    # A private attribute, so it never appears in the schema or serialized output.
+    _founder_reply: str | None = PrivateAttr(default=None)
 
 
 # ---------------------------------------------------------------------------

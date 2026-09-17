@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Loader2, Sparkles } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
+import { Logo } from '@/components/ui/logo'
 import ReportView from '@/components/validate/report-view'
 import { getSharedReport } from '@/lib/hitl/chatStore'
 import type { ReportBundle } from '@/lib/hitl/types'
@@ -38,10 +39,9 @@ export default function ShareReportPage({ shareId }: { shareId: string }) {
   }, [shareId])
 
   return (
-    <div className="relative z-10 min-h-screen bg-[#050405]">
+    <div className="relative z-10 min-h-screen bg-[#050405]/80">
       <div className="mx-auto flex max-w-[820px] items-center gap-2 px-4 pt-6 sm:px-8">
-        <Sparkles size={16} color="#E7D296" strokeWidth={1.5} />
-        <span className="text-[13px] font-semibold text-[#F5F3EF]">AI Startup Launch Team</span>
+        <Link href="/"><Logo size={22} textClassName="text-[14px]" /></Link>
       </div>
 
       {state === 'loading' && (

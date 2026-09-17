@@ -3,6 +3,7 @@
 import { Mail } from 'lucide-react'
 import { GithubIcon, LinkedinIcon, XIcon } from '@/components/ui/brand-icons'
 import Link from 'next/link'
+import { Logo } from '@/components/ui/logo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -24,11 +25,7 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-6 py-12">
         <div className="flex flex-col items-start justify-between gap-x-8 gap-y-10 sm:flex-row">
           <div className="space-y-4 max-w-md">
-            <div className="flex items-center gap-2">
-              <span className="text-xl font-bold tracking-tight text-white font-serif">
-                AI Startup <span className="text-amber-400">Launch Team</span>
-              </span>
-            </div>
+            <Logo size={28} textClassName="text-lg" />
             <p className="text-sm text-zinc-400 leading-relaxed">
               Validate your startup idea, test market demand, and assemble your autonomous AI execution team in under two
               minutes.

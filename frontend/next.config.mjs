@@ -5,6 +5,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Tree-shake icon/animation barrels so each page only ships what it imports.
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'framer-motion'],
+  },
+  poweredByHeader: false,
   images: {
     remotePatterns: [{ protocol: 'https', hostname: 'images.unsplash.com' }],
   },

@@ -53,6 +53,22 @@ export async function updateChat(id: string, patch: Partial<Omit<ChatRow, "id" |
   return data as ChatRow;
 }
 
+export async function renameChat(id: string, title: string): Promise<void> {
+  const clean = title.trim().slice(0, 120);
+  if (!clean) return;
+  const { error } = await supabase.from("chats").update({ title: clean }).eq("id", id);
+  if (error) fail(error, "rename the chat");
+  notify();
+}
+
+/** Deletes the chat; its messages go with it (ON DELETE CASCADE). */
+export async function deleteChat(id: string): Promise<void> {
+  const { error, count } = await supabase.from("chats").delete({ count: "exact" }).eq("id", id);
+  if (error) fail(error, "delete the chat");
+  if (count === 0) throw new Error("Couldn't delete the chat: it no longer exists or you don't have access.");
+  notify();
+}
+
 export async function getMessages(chatId: string): Promise<MessageRow[]> {
   const { data, error } = await supabase
     .from("messages")

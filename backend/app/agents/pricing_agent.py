@@ -76,6 +76,7 @@ class _LlmPricingQualitative(BaseModel):
     starter: _TierQualitative
     pro: _TierQualitative
     enterprise: _EnterpriseQualitative
+    reply_to_founder: str = Field(max_length=700)
 
 
 def _build_user_prompt(req: PricingAgentInput, calc: PricingCalculationResult) -> str:
@@ -178,7 +179,9 @@ async def run_pricing_agent(req: PricingAgentInput) -> PricingOutput | DegradedA
             qualitative = await structured_llm.ainvoke(messages)
             if not isinstance(qualitative, _LlmPricingQualitative):
                 raise ValueError(f"structured output returned unexpected type: {type(qualitative)}")
-            return _assemble_output(calc, qualitative)
+            result = _assemble_output(calc, qualitative)
+            result._founder_reply = qualitative.reply_to_founder.strip() or None
+            return result
         except (ValidationError, ValueError) as exc:
             last_error = exc
             logger.warning("pricing: attempt %s failed schema check: %s", attempt, exc)

@@ -11,6 +11,8 @@
 }
 
 html, body {
+  max-width: 100%;
+  overflow-x: clip;
   background-color: #050405;
   font-family: 'DM Sans', sans-serif;
 }
@@ -103,3 +105,15 @@ html, body {
     width: 100%;
   }
 }
+
+/* Horizontal scroll areas (stepper, code blocks, wide rows) keep a slim,
+   on-brand scrollbar — the global rule above hides all others. */
+.scroll-x {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(251, 191, 36, 0.45) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+.scroll-x::-webkit-scrollbar { display: block; height: 4px; width: 4px; }
+.scroll-x::-webkit-scrollbar-thumb { background: rgba(251, 191, 36, 0.45); border-radius: 9999px; }
+.scroll-x::-webkit-scrollbar-track { background: transparent; }

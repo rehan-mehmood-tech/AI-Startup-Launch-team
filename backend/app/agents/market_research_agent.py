@@ -13,7 +13,7 @@ import logging
 from typing import Literal
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 from app.agents.base_agent import get_llm
 from app.agents.hitl_context import hitl_context_block
@@ -42,6 +42,12 @@ class DegradedAgentOutput(BaseModel):
     agent: Literal["market_research"] = "market_research"
     error: str
     attempts: int
+
+
+class _MarketResearchLlm(MarketResearchOutput):
+    """What the LLM returns: the output plus a short reply to the founder."""
+
+    reply_to_founder: str = Field(max_length=700)
 
 
 def _bundle_to_prompt_json(bundle: SerpIntelligenceBundle) -> str:
@@ -115,7 +121,7 @@ async def run_market_research_agent(
     # method="json_schema" + strict=True uses Groq's native structured-outputs mode
     # (constrained decoding against the schema), not just a tool-call suggestion the
     # model can still drift away from — function_calling alone was not enough.
-    structured_llm = llm.with_structured_output(MarketResearchOutput, method="json_schema", strict=True)
+    structured_llm = llm.with_structured_output(_MarketResearchLlm, method="json_schema", strict=True)
 
     messages: list[SystemMessage | HumanMessage] = [
         SystemMessage(content=SYSTEM_PROMPT),
@@ -128,10 +134,12 @@ async def run_market_research_agent(
         attempts_made = attempt
         try:
             output = await structured_llm.ainvoke(messages)
-            if not isinstance(output, MarketResearchOutput):
+            if not isinstance(output, _MarketResearchLlm):
                 raise ValueError(f"structured output returned unexpected type: {type(output)}")
             verify_citations(output, bundle.raw_sources)
-            return output
+            result = MarketResearchOutput.model_validate(output.model_dump(exclude={"reply_to_founder"}))
+            result._founder_reply = output.reply_to_founder.strip() or None
+            return result
         except (ValidationError, ValueError, UnverifiedCitationError) as exc:
             last_error = exc
             logger.warning("market_research: attempt %s failed schema/citation check: %s", attempt, exc)

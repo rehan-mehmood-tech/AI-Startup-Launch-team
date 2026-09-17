@@ -56,7 +56,7 @@ export default function McqStep({
                 onChange={e => set(q.id, { choice: e.target.value })}
                 placeholder={q.placeholder}
                 maxLength={400}
-                className="w-full rounded-lg border border-[#2A2722] bg-[#0A0908] px-3.5 py-2.5 text-[14px] text-white placeholder:text-[#6E6B64] outline-none focus:border-[#E7D296]"
+                className="w-full rounded-lg border border-[#2A2722] bg-black/40 px-3.5 py-2.5 text-[14px] text-white placeholder:text-[#6E6B64] outline-none focus:border-amber-400"
               />
             ) : (
               <div className="flex flex-wrap gap-2" role="radiogroup">
@@ -72,7 +72,7 @@ export default function McqStep({
                       className={cn(
                         'flex max-w-full items-center gap-1.5 rounded-full border px-3.5 py-2 text-left text-[13px] transition-colors',
                         selected
-                          ? 'border-[#E7D296] bg-[#E7D296] font-semibold text-[#050405]'
+                          ? 'border-amber-400 bg-amber-400 font-semibold text-[#050405]'
                           : opt === OTHER
                             ? 'border-dashed border-[#43443E] text-[#A8A49C] hover:border-[#6E6B64]'
                             : 'border-[#43443E] text-[#A8A49C] hover:border-[#6E6B64] hover:text-[#F5F3EF]'
@@ -95,7 +95,7 @@ export default function McqStep({
                 placeholder={q.numericOther ? 'Enter an amount in USD' : 'Type your answer'}
                 maxLength={300}
                 aria-label={`${q.prompt} (other)`}
-                className="w-full rounded-lg border border-[#2A2722] bg-[#0A0908] px-3.5 py-2.5 text-[14px] text-white placeholder:text-[#6E6B64] outline-none focus:border-[#E7D296] sm:max-w-md"
+                className="w-full rounded-lg border border-[#2A2722] bg-black/40 px-3.5 py-2.5 text-[14px] text-white placeholder:text-[#6E6B64] outline-none focus:border-amber-400 sm:max-w-md"
               />
             )}
           </fieldset>
@@ -111,7 +111,7 @@ export default function McqStep({
         <button
           type="submit"
           disabled={!allValid || busy}
-          className="flex items-center gap-2 rounded-full bg-[#E7D296] px-5 py-2.5 text-[13px] font-semibold text-[#050405] disabled:cursor-not-allowed disabled:bg-[#1A1815] disabled:text-[#43443E]"
+          className="flex items-center gap-2 rounded-full bg-amber-400 px-5 py-2.5 text-[13px] font-semibold uppercase tracking-[0.06em] text-[#050405] hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-[#1A1815] disabled:text-[#43443E]"
         >
           {busy ? <Loader2 size={14} className="animate-spin" /> : <ArrowRight size={14} />}
           {submitLabel}

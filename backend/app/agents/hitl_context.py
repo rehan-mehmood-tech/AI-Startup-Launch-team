@@ -30,11 +30,15 @@ def hitl_context_block(req: HitlContext, max_previous_chars: int = 1500) -> str:
                 raw = raw[:max_previous_chars] + "…(truncated)"
             previous = f"\nYOUR_PREVIOUS_OUTPUT (the version being revised):\n{raw}\n"
         parts.append(
-            "REVISION_REQUEST — the founder reviewed your previous output and asked for changes. "
-            "Apply the request below. Keep everything they didn't object to consistent with your "
+            "REVISION_REQUEST — the founder reviewed your previous output and pushed back. This is the "
+            "most important instruction in this message. If the request is in scope, you MUST change the "
+            "affected fields so the difference is clearly visible in the new JSON (add, remove, reorder, or "
+            "rewrite as asked) — returning the previous output unchanged is a failure. If it is a question "
+            "rather than a change request, answer it in reply_to_founder and adjust the output only where "
+            "your answer implies it should change. Keep everything they didn't object to consistent with your "
             "previous output. The grounding rules still apply: never invent sources, competitors, or "
             "numbers the input data doesn't support; if the request asks for something the data "
-            "can't back up, say so in the relevant field instead of fabricating it."
+            "can't back up, say so in reply_to_founder instead of fabricating it."
             f"{previous}\n"
             f"FOUNDER'S REQUEST:\n{req.revision_request}"
         )

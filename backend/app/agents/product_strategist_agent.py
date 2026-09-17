@@ -13,7 +13,7 @@ import logging
 from typing import Literal
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 from app.agents.base_agent import get_llm
 from app.agents.hitl_context import hitl_context_block
@@ -32,6 +32,12 @@ class DegradedAgentOutput(BaseModel):
     agent: Literal["product_strategist"] = "product_strategist"
     error: str
     attempts: int
+
+
+class _ProductStrategyLlm(ProductStrategyOutput):
+    """What the LLM returns: the output plus a short reply to the founder."""
+
+    reply_to_founder: str = Field(max_length=700)
 
 
 def _build_user_prompt(req: ProductStrategistInput) -> str:
@@ -66,7 +72,7 @@ async def run_product_strategist_agent(
         max_tokens=1600,
         api_key=settings.groq_product_strategist_api_key or None,
     )
-    structured_llm = llm.with_structured_output(ProductStrategyOutput, method="json_schema", strict=True)
+    structured_llm = llm.with_structured_output(_ProductStrategyLlm, method="json_schema", strict=True)
 
     messages: list[SystemMessage | HumanMessage] = [
         SystemMessage(content=SYSTEM_PROMPT),
@@ -79,9 +85,11 @@ async def run_product_strategist_agent(
         attempts_made = attempt
         try:
             output = await structured_llm.ainvoke(messages)
-            if not isinstance(output, ProductStrategyOutput):
+            if not isinstance(output, _ProductStrategyLlm):
                 raise ValueError(f"structured output returned unexpected type: {type(output)}")
-            return output
+            result = ProductStrategyOutput.model_validate(output.model_dump(exclude={"reply_to_founder"}))
+            result._founder_reply = output.reply_to_founder.strip() or None
+            return result
         except (ValidationError, ValueError) as exc:
             last_error = exc
             logger.warning("product_strategist: attempt %s failed schema check: %s", attempt, exc)

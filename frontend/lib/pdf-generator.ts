@@ -1,4 +1,5 @@
 import type { ReportBundle } from "@/lib/hitl/types";
+import { DISCLAIMER } from "@/components/ui/logo";
 
 /**
  * White-background PDF of a finished report. jsPDF is loaded on demand so it
@@ -9,19 +10,25 @@ import type { ReportBundle } from "@/lib/hitl/types";
 
 function clean(text: unknown): string {
   return String(text ?? "")
-    .replace(/[‐-―−]/g, "-")
-    .replace(/[‘’‚′]/g, "'")
-    .replace(/[“”„″]/g, '"')
-    .replace(/…/g, "...")
-    .replace(/[  -​  　]/g, " ")
-    .replace(/•/g, "-")
-    .replace(/[←-⇿]/g, "->")
-    .replace(/[^\x09\x0A\x0D\x20-\x7E¡-ÿ]/g, "");
+    .replace(/[\u2010-\u2015\u2212]/g, "-")
+    .replace(/[\u2018\u2019\u201A\u2032]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u2033]/g, '"')
+    .replace(/\u2026/g, "...")
+    .replace(/[\u00A0\u2000-\u200B\u202F\u205F\u3000]/g, " ")
+    .replace(/\u2022/g, "-")
+    .replace(/[\u2190-\u21FF]/g, "->")
+    .replace(/[^\x09\x0A\x0D\x20-\x7E\u00A1-\u00FF]/g, "");
 }
 
 const usd = (n: number) => `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
 
-export async function downloadReportPdf(report: ReportBundle, authorName?: string | null): Promise<void> {
+export interface PdfOptions {
+  /** Optional introduction paragraph placed under the title (used by the sample report). */
+  intro?: string;
+  fileName?: string;
+}
+
+export async function downloadReportPdf(report: ReportBundle, authorName?: string | null, options: PdfOptions = {}): Promise<void> {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
@@ -34,17 +41,27 @@ export async function downloadReportPdf(report: ReportBundle, authorName?: strin
   const muted = () => doc.setTextColor(110, 107, 100);
   const gold = () => doc.setTextColor(150, 118, 40);
 
+  // Brand mark — same 32-unit geometry as components/ui/logo.tsx.
+  function poly(points: [number, number][], x: number, yy: number, k: number) {
+    const [x0, y0] = points[0];
+    const deltas = points.slice(1).map(([px, py], i) => [(px - points[i][0]) * k, (py - points[i][1]) * k]);
+    doc.lines(deltas, x + x0 * k, yy + y0 * k, [1, 1], "F", true);
+  }
+  function drawLogo(x: number, yy: number, size: number) {
+    const k = size / 32;
+    doc.setFillColor(251, 186, 36);
+    poly([[16, 1.5], [28.6, 8.75], [28.6, 23.25], [16, 30.5], [3.4, 23.25], [3.4, 8.75]], x, yy, k);
+    doc.setFillColor(10, 9, 8);
+    poly([[14.5, 8.5], [16.4, 14.1], [22, 16], [16.4, 17.9], [14.5, 23.5], [12.6, 17.9], [7, 16], [12.6, 14.1]], x, yy, k);
+    poly([[21.5, 7.5], [22.3, 9.7], [24.5, 10.5], [22.3, 11.3], [21.5, 13.5], [20.7, 11.3], [18.5, 10.5], [20.7, 9.7]], x, yy, k);
+  }
+
   function header() {
-    // Platform mark: gold rounded square with a spark.
-    doc.setFillColor(231, 210, 150);
-    doc.roundedRect(M, 30, 18, 18, 4, 4, "F");
-    doc.setFillColor(28, 26, 23);
-    doc.triangle(M + 9, 34, M + 12, 39, M + 6, 39, "F");
-    doc.triangle(M + 9, 44, M + 12, 39, M + 6, 39, "F");
+    drawLogo(M, 27, 22);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     ink();
-    doc.text("AI Startup Launch Team", M + 26, 43);
+    doc.text("AI Startup Launch Team", M + 30, 42);
     if (authorName) {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10);
@@ -128,12 +145,16 @@ export async function downloadReportPdf(report: ReportBundle, authorName?: strin
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   muted();
-  doc.text(`STARTUP VALIDATION REPORT · ${new Date(report.generated_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`.replace("·", "-"), M, y);
+  doc.text(`STARTUP VALIDATION REPORT - ${new Date(report.generated_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`, M, y);
   y += 22;
   para(report.title, 20, "bold");
   gap(4);
   para(`Verdict: ${orc.validation_status}`, 11, "bold", gold);
   gap(6);
+  if (options.intro) {
+    para(options.intro, 10, "normal", muted);
+    gap(6);
+  }
 
   // Agent 1
   const mr = o.market_research;
@@ -243,6 +264,14 @@ export async function downloadReportPdf(report: ReportBundle, authorName?: strin
     bullets(orc.failure_case_study.map(f => `${f.company}: ${f.collapse_reason}`));
   }
 
+  // Mandatory disclaimer, closing the document.
+  ensure(70);
+  gap(18);
+  doc.setDrawColor(225, 222, 215);
+  doc.line(M, y, W - M, y);
+  y += 16;
+  para(DISCLAIMER, 8.5, "normal", muted);
+
   const pages = doc.getNumberOfPages();
   for (let i = 1; i <= pages; i++) {
     doc.setPage(i);
@@ -253,5 +282,5 @@ export async function downloadReportPdf(report: ReportBundle, authorName?: strin
   }
 
   const slug = clean(report.title).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "report";
-  doc.save(`${slug}-validation-report.pdf`);
+  doc.save(options.fileName ?? `${slug}-validation-report.pdf`);
 }

@@ -84,7 +84,7 @@ export function MarketResearchSection({ o }: { o: MarketResearchOutput }) {
       <div className="flex flex-col divide-y divide-[#2A2722] border-y border-[#2A2722]">
         {o.competitor_analysis.map(c => (
           <div key={c.name + c.source_url} className="py-3">
-            <p className="text-[14px] font-medium text-[#F5F3EF]">
+            <p className="break-words text-[14px] font-medium text-[#F5F3EF]">
               {c.name} <span className="ml-1 text-[12px] font-normal text-[#8C887F]">{c.type}{c.pricing_snapshot ? ` · ${c.pricing_snapshot}` : ''}</span>
             </p>
             <p className="mt-1 text-[13px] leading-relaxed text-[#B8B4AB]"><span className="text-[#8C887F]">Strengths:</span> {c.strengths.join('; ') || '—'}</p>
@@ -198,13 +198,13 @@ export function MarketingSection({ o }: { o: MarketingOutput }) {
             <p className="text-[13px] font-medium text-[#F5F3EF]">{p.channel_name}</p>
             <p className="whitespace-pre-wrap text-[14px] leading-relaxed text-[#D6D2C9]">{p.post_content}</p>
             <p className="text-[12px] text-[#8C887F]">Visual asset prompt</p>
-            <pre className="whitespace-pre-wrap break-words rounded-md bg-[#0A0908] p-3 font-mono text-[12px] leading-relaxed text-[#C9B98A]">{p.visual_asset_prompt}</pre>
+            <pre className="scroll-x whitespace-pre-wrap break-words rounded-md bg-[#0A0908] p-3 font-mono text-[12px] leading-relaxed text-[#C9B98A]">{p.visual_asset_prompt}</pre>
           </div>
         ))}
       </div>
 
       <H3>Automation payload (v{o.automation_payload.format_version})</H3>
-      <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md bg-[#0A0908] p-3 font-mono text-[11px] leading-relaxed text-[#A8A49C]">{payload}</pre>
+      <pre className="scroll-x max-h-72 overflow-y-auto whitespace-pre-wrap break-words rounded-md bg-[#0A0908] p-3 font-mono text-[11px] leading-relaxed text-[#A8A49C]">{payload}</pre>
     </div>
   )
 }

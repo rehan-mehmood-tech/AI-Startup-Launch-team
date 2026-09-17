@@ -77,6 +77,7 @@ class _LlmMarketingQualitative(BaseModel):
     recommended_channels: list[_ChannelQualitative] = Field(min_length=3, max_length=3)
     brand_taglines: list[str] = Field(min_length=3, max_length=3)
     sample_campaign_posts: list[_PostQualitative] = Field(min_length=3, max_length=3)
+    reply_to_founder: str = Field(max_length=700)
 
 
 def _build_user_prompt(req: MarketingAgentInput) -> str:
@@ -172,7 +173,7 @@ async def run_marketing_agent(req: MarketingAgentInput) -> MarketingOutput | Deg
     # other three agents' buckets. Falls back to GROQ_API_KEY when unset.
     llm = get_llm(
         temperature=0.1,  # low + deterministic per PRD, for strict JSON compliance
-        max_tokens=2200,  # 3 channels + 3 taglines + 3 detailed 8k image prompts needs headroom
+        max_tokens=2800,  # 3 channels + 3 taglines + 3 art-directed image briefs + founder reply
         api_key=settings.groq_marketing_agent_api_key or None,
     )
     structured_llm = llm.with_structured_output(_LlmMarketingQualitative, method="json_schema", strict=True)
@@ -191,7 +192,9 @@ async def run_marketing_agent(req: MarketingAgentInput) -> MarketingOutput | Deg
             if not isinstance(qualitative, _LlmMarketingQualitative):
                 raise ValueError(f"structured output returned unexpected type: {type(qualitative)}")
             _budget_sum_ok(qualitative, req)
-            return _assemble_output(qualitative, req)
+            result = _assemble_output(qualitative, req)
+            result._founder_reply = qualitative.reply_to_founder.strip() or None
+            return result
         except (ValidationError, ValueError) as exc:
             last_error = exc
             logger.warning("marketing: attempt %s failed schema/business-rule check: %s", attempt, exc)

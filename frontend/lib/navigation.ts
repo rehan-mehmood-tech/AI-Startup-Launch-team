@@ -5,13 +5,12 @@ import { usePathname, useRouter } from "next/navigation";
 /** Screen names from the Figma design's state-based router, preserved so the
  * ported components keep their original `onNavigate(screen)` API. Here each
  * one maps to a real App Router route instead of a useState value. */
-export type Screen = "landing" | "onboarding" | "pipeline" | "dashboard" | "checkout" | "pricing" | "faq" | "login" | "signup";
+export type Screen = "landing" | "onboarding" | "pipeline" | "checkout" | "pricing" | "faq" | "login" | "signup";
 
 export const SCREEN_ROUTES: Record<Screen, string> = {
   landing: "/",
   onboarding: "/validate",
   pipeline: "/validate",
-  dashboard: "/dashboard",
   checkout: "/checkout",
   pricing: "/pricing",
   faq: "/faq",

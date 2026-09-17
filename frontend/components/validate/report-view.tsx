@@ -5,6 +5,7 @@ import { Check, Download, Link2, Loader2 } from 'lucide-react'
 import type { ReportBundle } from '@/lib/hitl/types'
 import { downloadReportPdf } from '@/lib/pdf-generator'
 import { AGENTS } from '@/lib/hitl/agents'
+import { DISCLAIMER } from '@/components/ui/logo'
 import {
   H3,
   MarketResearchSection,
@@ -50,7 +51,7 @@ function Actions({ report, shareUrl, authorName }: { report: ReportBundle; share
         <button
           onClick={pdf}
           disabled={pdfBusy}
-          className="flex items-center gap-2 rounded-full bg-[#E7D296] px-4 py-2 text-[13px] font-semibold text-[#050405] disabled:opacity-60"
+          className="flex items-center gap-2 rounded-full bg-amber-400 px-4 py-2 text-[13px] font-semibold text-[#050405] hover:bg-amber-300 disabled:opacity-60"
         >
           {pdfBusy ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
           Download PDF
@@ -74,7 +75,7 @@ function Section({ n, title, children }: { n: string; title: string; children: R
   return (
     <section className="border-t border-[#2A2722] py-10">
       <p className="font-mono text-[12px] text-[#6E6B64]">{n}</p>
-      <h2 className="mt-1 mb-6 font-serif text-[30px] leading-tight text-[#F5F3EF]">{title}</h2>
+      <h2 className="mt-1 mb-6 break-words font-serif text-[24px] leading-tight sm:text-[30px] text-[#F5F3EF]">{title}</h2>
       {children}
     </section>
   )
@@ -98,7 +99,7 @@ export default function ReportView({
     <article className="mx-auto w-full max-w-[820px] px-4 py-10 sm:px-8">
       <header className="pb-8">
         <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[#6E6B64]">Startup validation report · {date}</p>
-        <h1 className="mt-3 font-serif text-[36px] leading-[1.1] text-[#F5F3EF] sm:text-[44px]">{report.title}</h1>
+        <h1 className="mt-3 break-words font-serif text-[28px] leading-[1.1] text-[#F5F3EF] sm:text-[36px] lg:text-[44px]">{report.title}</h1>
         <p className="mt-4 text-[15px] text-[#A8A49C]">
           Verdict: <span className="font-semibold" style={{ color }}>{orc.validation_status}</span>
         </p>
@@ -108,7 +109,7 @@ export default function ReportView({
       </header>
 
       <Section n="00" title="Executive summary">
-        <p className="text-[15px] leading-[1.75] text-[#D6D2C9]">{orc.executive_summary}</p>
+        <p className="whitespace-pre-line text-[15px] leading-[1.75] text-[#D6D2C9]">{orc.executive_summary}</p>
 
         {orc.strategic_recommendations && orc.strategic_recommendations.length > 0 && (
           <>
@@ -151,6 +152,7 @@ export default function ReportView({
 
       <footer className="border-t border-[#2A2722] pt-8">
         <Actions report={report} shareUrl={shareUrl} authorName={authorName} />
+        <p className="mt-8 border-t border-[#2A2722] pt-5 text-[12px] italic leading-relaxed text-[#8C887F]">{DISCLAIMER}</p>
       </footer>
     </article>
   )

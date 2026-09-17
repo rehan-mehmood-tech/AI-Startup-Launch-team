@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, Bot, Check, CheckCircle2, Loader2, Lock, Pencil, RotateCcw, Send } from 'lucide-react'
+import { AlertTriangle, Check, CheckCircle2, Loader2, Lock, Pencil, RotateCcw, Send } from 'lucide-react'
 import { describeError, hitlApi } from '@/lib/api'
 import {
   AGENTS,
@@ -27,6 +27,7 @@ import {
   type SubAgentId,
 } from '@/lib/hitl/types'
 import { cn } from '@/lib/utils'
+import { LogoMark } from '@/components/ui/logo'
 import McqStep from '@/components/validate/mcq-step'
 import ReportView from '@/components/validate/report-view'
 import { AgentOutputView } from '@/components/validate/agent-output'
@@ -73,11 +74,34 @@ async function callAgent(agent: SubAgentId, answers: Answers, approved: Partial<
   }
 }
 
+const SECTION_LABELS: Record<string, string> = {
+  market_trends: 'Market trends',
+  market_size_estimate: 'Market size',
+  competitor_analysis: 'Competitors',
+  customer_pain_points: 'Pain points',
+  data_confidence: 'Data confidence',
+  core_pain_point_anchor: 'Pain point anchor',
+  value_proposition: 'Value proposition',
+  mvp_features: 'MVP features',
+  ui_vibe_specification: 'UI direction',
+  pricing_tiers: 'Pricing tiers',
+  recommended_channels: 'Channels',
+  brand_taglines: 'Taglines',
+  sample_campaign_posts: 'Campaign posts & prompts',
+}
+
+/** Which labelled sections differ between two versions of an agent output. */
+function changedSections(prev: object, next: object): string[] {
+  const a = prev as Record<string, unknown>
+  const b = next as Record<string, unknown>
+  return Object.keys(SECTION_LABELS).filter(k => k in b && JSON.stringify(a[k]) !== JSON.stringify(b[k])).map(k => SECTION_LABELS[k])
+}
+
 // ── presentational bits ──────────────────────────────────────────────
 
 function Stepper({ current, viewing, onSelect }: { current: number; viewing: number; onSelect: (i: number) => void }) {
   return (
-    <ol className="flex gap-1 overflow-x-auto px-4 py-3 sm:px-8">
+    <ol className="scroll-x flex gap-1 px-4 py-3 sm:px-8">
       {AGENTS.map(a => {
         const done = current > a.index
         const active = viewing === a.index
@@ -110,9 +134,7 @@ function Stepper({ current, viewing, onSelect }: { current: number; viewing: num
 function AgentBubble({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border border-[#E7D296]/70">
-        <Bot size={14} color="#E7D296" strokeWidth={1.5} />
-      </div>
+      <LogoMark size={26} className="mt-0.5" />
       <div className="min-w-0 flex-1">{children}</div>
     </div>
   )
@@ -121,7 +143,7 @@ function AgentBubble({ children }: { children: React.ReactNode }) {
 function UserBubble({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex justify-end">
-      <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-tr-sm bg-[#1F1C17] px-4 py-3 text-[14px] leading-relaxed text-[#F5F3EF]">
+      <div className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-tr-sm border border-white/10 bg-white/[0.06] px-4 py-3 backdrop-blur-md text-[14px] leading-relaxed text-[#F5F3EF]">
         {children}
       </div>
     </div>
@@ -215,7 +237,10 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
   const lastOutput = last?.payload?.kind === 'output' ? last.payload.output : null
   const needsRun = !!chat && viewing === current && current < 4 && !!intake && last?.sender === 'user'
 
+  // Follow the conversation, but never on an empty intake form — that would
+  // scroll past the agent header and the first questions.
   useEffect(() => {
+    if (messages.length === 0 && !running) return
     bottomRef.current?.scrollIntoView({ block: 'end' })
   }, [messages.length, running, viewing])
 
@@ -235,13 +260,15 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
       setRunning(true)
       setRunError(null)
       try {
-        const result = await callAgent(agentId, answers, c.approved_outputs, steer)
+        // The backend returns the agent's note to the founder next to the output
+        // fields; keep it as the message text so the stored output stays schema-exact.
+        const { reply_to_founder: reply, ...result } = (await callAgent(agentId, answers, c.approved_outputs, steer)) as Record<string, unknown>
         const saved = await addMessage({
           chat_id: c.id,
           agent_id: agentId,
           sender: 'agent',
-          content: isDegraded(result) ? result.error : '',
-          payload: { kind: 'output', output: result as AgentOutputs[SubAgentId] },
+          content: isDegraded(result) ? result.error : typeof reply === 'string' ? reply : '',
+          payload: { kind: 'output', output: result as unknown as AgentOutputs[SubAgentId] },
         })
         append(saved)
       } catch (e) {
@@ -274,7 +301,9 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
           pricing_output: outs.financial,
           marketing_output: outs.marketing,
         })
-        const report: ReportBundle = { title: c.title, generated_at: new Date().toISOString(), orchestrator, outputs: outs }
+        // Re-read the title in case the chat was renamed from the sidebar meanwhile.
+        const fresh = await getChat(c.id)
+        const report: ReportBundle = { title: fresh?.title ?? c.title, generated_at: new Date().toISOString(), orchestrator, outputs: outs }
         const updated = await updateChat(c.id, { report, status: 'completed', current_agent_index: 5 })
         setChat(updated)
         setViewIndex(null)
@@ -428,7 +457,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
         <div className="mx-auto flex w-full max-w-[820px] flex-col gap-6 px-4 pt-4 pb-10 sm:px-8">
           <header>
             <p className="font-mono text-[12px] text-[#6E6B64]">Agent {viewing + 1} of 5</p>
-            <h1 className="mt-1 font-serif text-[30px] leading-tight text-[#F5F3EF] sm:text-[36px]">{agent.name}</h1>
+            <h1 className="mt-1 break-words font-serif text-[26px] leading-tight text-[#F5F3EF] sm:text-[30px] lg:text-[36px]">{agent.name}</h1>
             <p className="mt-1 text-[14px] text-[#A8A49C]">{agent.blurb}</p>
           </header>
 
@@ -471,6 +500,8 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                   if (p?.kind === 'revision') return <UserBubble key={m.id}>{m.content}</UserBubble>
                   if (p?.kind === 'output') {
                     const superseded = idx !== win.length - 1
+                    const prevGood = idx > 0 && win[idx - 1].payload?.kind === 'revision' ? lastGoodOutput(win, idx) : null
+                    const changes = prevGood && !isDegraded(p.output) ? changedSections(prevGood, p.output) : null
                     return (
                       <AgentBubble key={m.id}>
                         {isDegraded(p.output) ? (
@@ -486,7 +517,19 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                             </div>
                           </details>
                         ) : (
-                          <AgentOutputView agent={agentId} output={p.output as AgentOutputs[SubAgentId]} />
+                          <div className="flex flex-col gap-4">
+                            {(m.content || changes) && (
+                              <div className="rounded-xl border border-[#E7D296]/25 bg-[#E7D296]/[0.06] px-4 py-3">
+                                {changes && (
+                                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#E7D296]">
+                                    {changes.length ? `Revised · changed: ${changes.join(', ')}` : 'No changes to the output'}
+                                  </p>
+                                )}
+                                {m.content && <p className="text-[14px] leading-relaxed text-[#F5F3EF]">{m.content}</p>}
+                              </div>
+                            )}
+                            <AgentOutputView agent={agentId} output={p.output as AgentOutputs[SubAgentId]} />
+                          </div>
                         )}
                       </AgentBubble>
                     )
@@ -520,7 +563,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
 
       {/* Review bar: counter-arguments + approve */}
       {chat && viewing < 4 && !isApprovedView && !editing && intake && !running && lastOutput && (
-        <div className="border-t border-[#2A2722] bg-[#050405] px-4 py-3 sm:px-8">
+        <div className="border-t border-white/10 bg-[#0A0908]/70 px-4 py-3 backdrop-blur-xl sm:px-8">
           <div className="mx-auto flex max-w-[820px] flex-col gap-2.5">
             {agentId === 'financial' && hasGoodOutput && (
               <p className="text-[12px] text-[#8C887F]">
@@ -541,13 +584,13 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                 maxLength={2000}
                 placeholder={`Push back on ${agent.name}'s output or ask for changes…`}
                 aria-label="Feedback for the active agent"
-                className="max-h-40 min-h-[44px] flex-1 resize-none rounded-xl border border-[#2A2722] bg-[#0A0908] px-3.5 py-2.5 text-[14px] text-white placeholder:text-[#6E6B64] outline-none focus:border-[#E7D296]"
+                className="max-h-40 min-h-[44px] flex-1 resize-none rounded-xl border border-[#2A2722] bg-black/40 px-3.5 py-2.5 text-[14px] text-white placeholder:text-[#6E6B64] outline-none focus:border-amber-400"
               />
               <button
                 type="submit"
                 disabled={!revision.trim() || busy}
                 aria-label="Send feedback"
-                className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#E7D296] text-[#050405] disabled:bg-[#1A1815] disabled:text-[#43443E]"
+                className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-amber-400 text-[#050405] hover:bg-amber-300 disabled:bg-[#1A1815] disabled:text-[#43443E]"
               >
                 <Send size={16} />
               </button>
@@ -564,7 +607,7 @@ export default function ChatView({ chatId }: { chatId: string | null }) {
                 onClick={approve}
                 disabled={!hasGoodOutput || busy}
                 title={hasGoodOutput ? undefined : 'Retry the agent until it returns a valid output'}
-                className="flex items-center gap-2 rounded-full bg-[#E7D296] px-5 py-2.5 text-[13px] font-semibold text-[#050405] disabled:cursor-not-allowed disabled:bg-[#1A1815] disabled:text-[#43443E]"
+                className="flex items-center gap-2 rounded-full bg-amber-400 px-5 py-2.5 text-[13px] font-semibold uppercase tracking-[0.06em] text-[#050405] hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-[#1A1815] disabled:text-[#43443E]"
               >
                 {busy ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                 {viewing === 3 ? 'Approve & build report' : 'Approve & Next'}

@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Sparkles, FileText, ChevronRight, Menu, X } from 'lucide-react'
+import { FileText, ChevronRight, Loader2, Menu, X } from 'lucide-react'
+import { Logo } from '@/components/ui/logo'
 import type { Screen } from '@/lib/navigation'
 import { supabase } from '@/lib/supabase/client'
 
@@ -22,6 +23,25 @@ export default function Navbar({ screen, onNavigate }: { screen: Screen; onNavig
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => setSignedIn(!!session))
     return () => sub.subscription.unsubscribe()
   }, [])
+
+  const [sampleBusy, setSampleBusy] = useState(false)
+
+  // Generates the standard sample report PDF client-side; jsPDF and the
+  // sample data are only downloaded when the button is actually clicked.
+  async function downloadSample() {
+    if (sampleBusy) return
+    setSampleBusy(true)
+    try {
+      const [{ downloadReportPdf }, { SAMPLE_REPORT, SAMPLE_AUTHOR, SAMPLE_INTRO }] = await Promise.all([
+        import('@/lib/pdf-generator'),
+        import('@/lib/sample-report'),
+      ])
+      await downloadReportPdf(SAMPLE_REPORT, SAMPLE_AUTHOR, { intro: SAMPLE_INTRO, fileName: 'sample-validation-report.pdf' })
+    } finally {
+      setSampleBusy(false)
+      setMobileOpen(false)
+    }
+  }
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -51,10 +71,7 @@ export default function Navbar({ screen, onNavigate }: { screen: Screen; onNavig
           onClick={() => onNavigate('landing')}
           className="flex items-center gap-2 group"
         >
-          <Sparkles size={20} color="#E7D296" strokeWidth={1.5} />
-          <span className="text-[15px] font-semibold text-[#F5F3EF] group-hover:text-white transition-colors">
-            AI Startup Launch Team
-          </span>
+          <Logo size={26} />
         </button>
 
         {/* Desktop nav links */}
@@ -98,10 +115,11 @@ export default function Navbar({ screen, onNavigate }: { screen: Screen; onNavig
             </>
           )}
           <button
-            onClick={() => onNavigate('dashboard')}
-            className="hidden xl:flex items-center gap-1.5 px-5 py-2.5 rounded-full border border-[#43443E] text-[13px] font-semibold text-[#F5F3EF] uppercase tracking-[0.08em] hover:border-[#6E6B64] transition-colors duration-150"
+            onClick={downloadSample}
+            disabled={sampleBusy}
+            className="hidden xl:flex items-center gap-1.5 px-5 py-2.5 rounded-full border border-[#43443E] text-[13px] font-semibold text-[#F5F3EF] uppercase tracking-[0.08em] hover:border-[#6E6B64] transition-colors duration-150 disabled:opacity-60"
           >
-            <FileText size={16} strokeWidth={1.5} />
+            {sampleBusy ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} strokeWidth={1.5} />}
             Sample Report
           </button>
           <button
@@ -157,6 +175,14 @@ export default function Navbar({ screen, onNavigate }: { screen: Screen; onNavig
               </button>
             </div>
           )}
+          <button
+            onClick={downloadSample}
+            disabled={sampleBusy}
+            className="flex items-center gap-2 text-[15px] text-[#A8A49C] hover:text-[#F5F3EF] text-left"
+          >
+            <FileText size={16} strokeWidth={1.5} />
+            {sampleBusy ? 'Preparing PDF…' : 'Sample Report (PDF)'}
+          </button>
           <button
             onClick={() => { onNavigate('onboarding'); setMobileOpen(false) }}
             className="mt-2 px-5 py-3 rounded-full bg-amber-400 text-[#050405] text-[13px] font-semibold uppercase tracking-[0.08em] text-center"

@@ -10,6 +10,34 @@ import { ScrollWordReveal } from '@/components/ui/motion-scroll-word-reveal'
 import { ShimmerText } from '@/components/ui/shimmer-text'
 import { Footer } from '@/components/ui/footer'
 import { useTypewriter } from '@/lib/useTypewriter'
+import { LogoMark } from '@/components/ui/logo'
+
+/** < 768px: true, otherwise false; null until measured (renders nothing, no flash). */
+function useIsMobile(): boolean | null {
+  const [mobile, setMobile] = useState<boolean | null>(null)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    const update = () => setMobile(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
+  return mobile
+}
+
+function HeroStaticBanner() {
+  return (
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-sm">
+      <div className="absolute size-56 rounded-full bg-amber-400/20 blur-3xl" aria-hidden />
+      <div className="absolute size-28 rounded-full border border-amber-400/30" aria-hidden />
+      <div className="absolute size-44 rounded-full border border-amber-400/10" aria-hidden />
+      <div className="relative flex flex-col items-center gap-3 text-center">
+        <LogoMark size={64} />
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-300/90">5 AI agents · 1 verdict</p>
+      </div>
+    </div>
+  )
+}
 
 const founderMetrics = [
   { stat: '92%', label: 'Failure Rate', body: 'Driven by premature scaling and shipping without validated market demand.' },
@@ -191,6 +219,7 @@ const LONGEST_HERO_PHRASE = HERO_PHRASES.reduce((a, b) => (b.length > a.length ?
 
 export default function Landing({ onNavigate }: { onNavigate: (s: Screen) => void }) {
   const typedPhrase = useTypewriter(HERO_PHRASES, { typeMs: 35, deleteMs: 15, pauseMs: 1500, gapMs: 250 })
+  const isMobile = useIsMobile()
 
   // Drives the footer CTA: signed-in founders go straight to the wizard,
   // guests are routed to pricing first.
@@ -272,24 +301,23 @@ export default function Landing({ onNavigate }: { onNavigate: (s: Screen) => voi
                 Start Validation
                 <ChevronRight size={16} strokeWidth={1.5} />
               </button>
-              <button
-                onClick={() => onNavigate('dashboard')}
-                className="text-[13px] text-zinc-200 hover:text-white"
-              >
-                See a sample dashboard →
-              </button>
             </div>
           </div>
 
           {/* Right column — robot stage (unchanged). Only the column span
               changed, to fit the 12-column grid; the badge was removed. */}
-          <div className="relative lg:col-span-5 w-full flex flex-col items-end justify-center min-h-[420px]">
-            <div className="relative w-full h-[420px] lg:h-[520px]">
+          <div className="relative lg:col-span-5 w-full flex flex-col items-end justify-center min-h-[240px] md:min-h-[420px]">
+            {/* Phones get a lightweight static banner (no 3D runtime download);
+                the fixed heights reserve space so neither variant shifts layout. */}
+            <div className="relative w-full h-[240px] md:h-[420px] lg:h-[520px]">
               <Spotlight className="-top-40 left-0" size={320} />
-              <SplineScene
-                scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
-                className="w-full h-full scale-[0.85] md:scale-90 origin-center"
-              />
+              {isMobile === false && (
+                <SplineScene
+                  scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
+                  className="w-full h-full scale-[0.85] md:scale-90 origin-center"
+                />
+              )}
+              {isMobile === true && <HeroStaticBanner />}
             </div>
           </div>
         </div>

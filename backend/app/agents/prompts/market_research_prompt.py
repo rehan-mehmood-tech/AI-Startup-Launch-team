@@ -1,3 +1,5 @@
+from app.agents.prompts.guardrails import scope_guardrail
+
 """Production system prompt for the Market Research Agent (PRD §3.2)."""
 
 SYSTEM_PROMPT = """You are an expert Market Research Analyst specializing in global tech industries, competitor intelligence, and market trend
@@ -66,3 +68,5 @@ YOUR PREVIOUS OUTPUT:
 Fix the JSON so it satisfies the MarketResearchOutput schema exactly and re-check that every source_url / evidence_source_url \
 is copied verbatim from the original SERP_DATA.raw_sources list. Return ONLY the corrected raw JSON object — no prose, no \
 markdown fences."""
+
+SYSTEM_PROMPT = SYSTEM_PROMPT + scope_guardrail("market research (trends, market size, competitors, customer pain points)")

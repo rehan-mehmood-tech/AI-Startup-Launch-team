@@ -1,3 +1,5 @@
+from app.agents.prompts.guardrails import scope_guardrail
+
 """Production system prompt for the Product Strategist Agent (PRD §3.3)."""
 
 SYSTEM_PROMPT = """You are an elite Product Strategist and UX Architect. Your job is to translate complex market research data into a laser-
@@ -50,3 +52,5 @@ VALIDATION ERROR:
 Fix the JSON so it satisfies the ProductStrategyOutput schema exactly — in particular respect the 5-item hard cap on
 mvp_features.must_have and make sure every color_palette value is a normalized 6-digit #hex string. Return ONLY the
 corrected raw JSON object — no prose, no markdown fences."""
+
+SYSTEM_PROMPT = SYSTEM_PROMPT + scope_guardrail("product strategy (value proposition, MVP feature scope, UI direction)")

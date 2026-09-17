@@ -102,8 +102,8 @@ export default function PricingSection3() {
   const togglePricingPeriod = (value: string) => setIsYearly(Number.parseInt(value) === 1)
 
   return (
-    <div className="relative z-10 px-4 pt-12 pb-20 min-h-screen max-w-7xl mx-auto" ref={pricingRef}>
-      <article className="flex sm:flex-row flex-col sm:pb-0 pb-4 sm:items-center items-start justify-between gap-6 mb-8">
+    <div className="relative z-10 px-4 sm:px-6 lg:px-8 pt-12 pb-20 min-h-screen max-w-7xl mx-auto" ref={pricingRef}>
+      <article className="flex lg:flex-row flex-col lg:pb-0 pb-4 lg:items-center items-start justify-between gap-6 mb-8">
         <div className="text-left">
           <h2 className="font-serif text-4xl sm:text-5xl font-normal leading-[120%] text-white mb-4">
             <VerticalCutReveal

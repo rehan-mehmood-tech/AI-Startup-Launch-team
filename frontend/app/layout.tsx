@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import AppShell from '@/components/AppShell'
 import { SilkBackground } from '@/components/ui/silk-background-animation'
-import { RunProvider } from '@/lib/RunContext'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -17,9 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Fixed canvas at z-0; body keeps the #050405 base colour beneath it
             and AppShell stacks above at z-10. */}
         <SilkBackground />
-        <RunProvider>
-          <AppShell>{children}</AppShell>
-        </RunProvider>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   )

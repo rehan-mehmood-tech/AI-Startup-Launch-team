@@ -1,5 +1,7 @@
 """Per-agent test routes — exercise each sub-agent standalone via Swagger."""
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from app.agents.market_research_agent import (
     DegradedAgentOutput as MarketResearchDegraded,
@@ -27,23 +29,34 @@ from app.models.schemas import (
 router = APIRouter(prefix="/agents", tags=["agents"])
 
 
+def _respond(result: BaseModel) -> JSONResponse:
+    """Serialize an agent result, adding the founder reply (if any) as
+    `reply_to_founder` next to the output fields. The frontend strips it off
+    before storing the output, so approved outputs stay schema-exact."""
+    body = result.model_dump(mode="json")
+    reply = getattr(result, "_founder_reply", None)
+    if reply:
+        body["reply_to_founder"] = reply
+    return JSONResponse(body)
+
+
 @router.post("/market-research", response_model=MarketResearchOutput | MarketResearchDegraded)
-async def market_research(payload: MarketResearchInput) -> MarketResearchOutput | MarketResearchDegraded:
-    return await run_market_research_agent(payload)
+async def market_research(payload: MarketResearchInput) -> JSONResponse:
+    return _respond(await run_market_research_agent(payload))
 
 
 @router.post("/product-strategist", response_model=ProductStrategyOutput | ProductStrategistDegraded)
 async def product_strategist(
     payload: ProductStrategistInput,
-) -> ProductStrategyOutput | ProductStrategistDegraded:
-    return await run_product_strategist_agent(payload)
+) -> JSONResponse:
+    return _respond(await run_product_strategist_agent(payload))
 
 
 @router.post("/pricing", response_model=PricingOutput | PricingDegraded)
-async def pricing(payload: PricingAgentInput) -> PricingOutput | PricingDegraded:
-    return await run_pricing_agent(payload)
+async def pricing(payload: PricingAgentInput) -> JSONResponse:
+    return _respond(await run_pricing_agent(payload))
 
 
 @router.post("/marketing", response_model=MarketingOutput | MarketingDegraded)
-async def marketing(payload: MarketingAgentInput) -> MarketingOutput | MarketingDegraded:
-    return await run_marketing_agent(payload)
+async def marketing(payload: MarketingAgentInput) -> JSONResponse:
+    return _respond(await run_marketing_agent(payload))

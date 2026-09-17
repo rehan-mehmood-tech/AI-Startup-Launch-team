@@ -1,3 +1,5 @@
+from app.agents.prompts.guardrails import scope_guardrail
+
 """Production system prompt for the Pricing Agent (PRD §3.4).
 
 Unlike Agents 1-2, this agent's numeric fields are NOT produced by the LLM —
@@ -54,3 +56,5 @@ VALIDATION ERROR:
 Fix the JSON so it satisfies the required schema exactly — use the EXACT feature name strings from MVP_FEATURES, and
 make sure pro.included_features contains every must_have feature while enterprise.included_features contains every
 must_have AND nice_to_have feature. Return ONLY the corrected raw JSON object — no prose, no markdown fences."""
+
+SYSTEM_PROMPT = SYSTEM_PROMPT + scope_guardrail("pricing and business-model structure (tier feature bucketing, billing cycles)")
