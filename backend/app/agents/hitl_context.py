@@ -12,6 +12,7 @@ import json
 from app.models.schemas import HitlContext
 
 
+
 def hitl_context_block(req: HitlContext, max_previous_chars: int = 1500) -> str:
     parts: list[str] = []
 
