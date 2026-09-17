@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     serpapi_max_workers: int = 6
 
     # CORS & Security
-    cors_origins: str = "http://localhost:3000"
+    cors_origins: str = "*"
     jwt_secret: str = ""
 
     # Supabase: Postgres persistence + auth for workspaces/agent_runs (see

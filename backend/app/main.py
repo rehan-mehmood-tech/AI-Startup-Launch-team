@@ -43,15 +43,19 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(SecurityHeadersMiddleware)
 
-# CORS Middleware with environment-driven origins
+# CORS Middleware with environment-driven origins (supports wildcard '*' for Vercel/localhost)
 settings = get_settings()
-origins = [origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()]
+raw_origins = settings.cors_origins.strip()
+if not raw_origins or raw_origins == "*":
+    origins = ["*"]
+else:
+    origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins if origins else ["http://localhost:3000"],
+    allow_origins=origins if origins else ["*"],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
