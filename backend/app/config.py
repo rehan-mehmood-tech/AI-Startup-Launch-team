@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     serpapi_backoff_base_seconds: float = 2.0
     serpapi_max_workers: int = 6
 
+    # CORS & Security
+    cors_origins: str = "http://localhost:3000"
+    jwt_secret: str = ""
+
     # Supabase: Postgres persistence + auth for workspaces/agent_runs (see
     # database_schema.sql). service_role bypasses RLS — backend-only, never
     # ship it to a client; anon_key is safe for a browser/frontend context.
