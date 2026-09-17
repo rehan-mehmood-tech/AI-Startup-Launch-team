@@ -483,10 +483,19 @@ async def run_orchestrator_pipeline(req: OrchestratorInput) -> OrchestratorOutpu
     collected wizard submission. State: pending_validation -> running ->
     compiled -> delivered, persisted in Supabase's `workspaces` table (see
     app/services/run_state.py)."""
+    # Step 1: Create a new workspace run in Supabase database
     run = await run_state.create_run(owner_id=req.owner_id, title=req.market_research.core_idea[:120])
+    
+    # Step 2: Persist founder onboarding inputs for auditing and history
     await agent_persistence.save_onboarding_inputs(run.run_id, req)
+    
+    # Step 3: Transition workspace state machine to 'running'
     await run_state.transition(run.run_id, "running")
+    
+    # Step 4: Run the 4 autonomous sub-agent stages (Market -> Strategy -> Pricing -> Marketing)
     results = await _run_stages(req, start_stage="market_research", workspace_id=run.run_id)
+    
+    # Step 5: Synthesize executive summary, compute risk tags, and finalize report delivery
     return await _finalize(req, results, run.run_id)
 
 
