@@ -54,12 +54,22 @@ export function GoogleButton({ onError, next = '/validate' }: { onError: (messag
 
   async function handleClick() {
     setBusy(true)
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}${next}` },
-    })
-    if (error) {
-      onError(error.message)
+    try {
+      const targetPath = next && next.startsWith('/') ? next : '/validate'
+      const redirectTo = `${window.location.origin}${targetPath}`
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+        },
+      })
+      if (error) {
+        onError(error.message)
+        setBusy(false)
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'An error occurred during Google sign in.'
+      onError(message)
       setBusy(false)
     }
   }
